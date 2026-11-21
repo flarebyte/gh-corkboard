@@ -15,6 +15,7 @@ index/documents.json,documents[].path,string,required,"At most 244 ASCII charact
 index/documents.json,documents[].description,string,required,0–500 Unicode code points. Single-line display text.,schema and Go,board.validation.internal.index
 index/documents.json,documents[].milestone,string,optional,"1–64 ASCII characters total including slash separators. Full-string pattern ^[A-Za-z0-9][A-Za-z0-9 ._-]*(/[A-Za-z0-9][A-Za-z0-9 ._-]*)*$. Reject trailing whitespace in each segment.",schema and Go,board.validation.internal.index
 index/documents.json,documents[].concept,string,optional,"1–48 ASCII characters total including slash separators. Each segment contains only letters. Full-string pattern ^[A-Za-z]+(/[A-Za-z]+)*$.",schema,board.validation.internal.index
+index/documents.json,documents[].assignee,string,optional,Canonical registered principal ID. Check effective read access to the document scope when setting the assignment.,schema and Go,board.validation.internal.index
 index/documents.json,documents[].status,string,required,One of the lifecycle states in lifecycle.csv.,schema,board.validation.internal.index
 index/documents.json,documents[].sha256,string,required,Exactly 64 lowercase hexadecimal characters. Audit compares it to the digest of the stored bytes on disk.,schema and audit,board.validation.internal.index
 index/documents.json,documents[].reviewComments,object,required,Allow an empty object. Each key is a registered principal ID. Each value is one review object.,schema and Go,board.validation.internal.index

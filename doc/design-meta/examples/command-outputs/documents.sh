@@ -6,7 +6,7 @@
 example_doc_create() {
   gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
     --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" \
-    --concept Cursor/Pagination --status active < pagination.md
+    --concept Cursor/Pagination --assignee agent:specs --status active < pagination.md
   # Expected stdout
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
@@ -58,6 +58,7 @@ example_doc_search() {
   #   Requirements for cursor pagination
   #   Milestone: v1 launch/Specs
   #   Concept: Cursor/Pagination
+  #   Assignee: agent:specs
   #   agent:specs [pass] Acceptance criteria cover the edge cases.
   #   agent:test [pass] The test plan covers every criterion.
   #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
@@ -69,8 +70,8 @@ example_doc_search_table() {
   gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
     --milestone 'v1 launch/*' --concept 'cursor/*' --format table
   # Expected stdout
-  # ID                                    NAME        SCOPE        DESCRIPTION                         MILESTONE        CONCEPT
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  v1 launch/Specs  Cursor/Pagination
+  # ID                                    NAME        SCOPE        DESCRIPTION                         ASSIGNEE     MILESTONE        CONCEPT
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  agent:specs  v1 launch/Specs  Cursor/Pagination
 }
 
 # doc search (compact CSV)
@@ -79,8 +80,33 @@ example_doc_search_csv() {
   gh corkboard --as agent:implementation doc search --in topic:specs \
     --milestone 'v1 launch/Specs' --concept Cursor/Pagination --format csv
   # Expected stdout
-  # id,name,scope,description,status
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
+  # id,name,scope,description,status,assignee
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved,agent:specs
+}
+
+# doc search (milestone supervision)
+# Multiple statuses and the milestone prefix keep those columns visible.
+# Use --json in place of --format table for full metadata.
+example_doc_search_supervision() {
+  gh corkboard --as human:owner doc search --milestone 'v1 launch/*' --status active --status blocked --status review --format table
+  # Expected stdout
+  # ID                                    NAME                       SCOPE                 DESCRIPTION                STATUS  ASSIGNEE              MILESTONE        CONCEPT
+  # 53dd1654-7fab-459f-a414-dc91198c0c61  pagination-implementation  agent:implementation  Implement the next cursor  active  agent:implementation  v1 launch/Specs  Cursor/Implementation
+}
+
+# doc get (progress note selected from the milestone search)
+example_doc_get_progress() {
+  gh corkboard --as human:owner doc get 53dd1654-7fab-459f-a414-dc91198c0c61
+  # Expected stdout
+  # # Pagination implementation
+  #
+  # ## Current work
+  #
+  # Implementing next-cursor encoding for the list endpoint.
+  #
+  # ## Next step
+  #
+  # Wire the cursor into the integration tests.
 }
 
 # doc search (inaccessible scope)

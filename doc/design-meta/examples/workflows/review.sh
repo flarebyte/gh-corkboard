@@ -17,7 +17,7 @@ example_review_workflow() (
   gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
   gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
     --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
-    --status active --json < pagination.md
+    --assignee agent:specs --status active --json < pagination.md
   doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination \
     --milestone "v1 launch/Specs")
   gh corkboard --as agent:implementation doc get "$doc_id"

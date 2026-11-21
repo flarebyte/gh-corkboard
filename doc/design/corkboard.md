@@ -12,7 +12,7 @@ Every board command requires a global `--as <principal>` selector before the com
 
 The policy is plaintext JSON validated against a built-in version-1 schema. Each principal entry has an ID and an optional role. After schema validation, the CLI resolves an omitted `role` to `member`. An explicit role must be valid and non-null. Check unique principal and topic IDs, one grant per scope and principal with a nonempty set of distinct permissions, registered grant subjects and scopes, and at least one administrator after applying defaults. Only a human can hold `admin`.
 
-`read` allows discovery, retrieval, and validation. `write` allows creating documents and changing their content, description, milestone, or concept. A topic `delete` grant allows deleting individual documents in that topic. `status` allows setting any lifecycle status and setting or clearing the caller's own review. Each of `write`, `delete`, and `status` implies `read` and can be granted independently where the scope permits it. Board admins have all four permissions in every scope and run board-wide prune. Only a board admin can delete a document from an agent or skill channel.
+`read` allows discovery, retrieval, and validation. `write` allows creating documents and changing their content, description, milestone, concept, or assignee. A topic `delete` grant allows deleting individual documents in that topic. `status` allows setting any lifecycle status and setting or clearing the caller's own review. Each of `write`, `delete`, and `status` implies `read` and can be granted independently where the scope permits it. Board admins have all four permissions in every scope and run board-wide prune. Only a board admin can delete a document from an agent or skill channel.
 
 Folder removal requires the board `admin` role. `doc delete` retains the folder even when deleting its last document. `access topic delete` removes the topic folder and its grants only when the folder is empty and the scope has no remaining index entries.
 
@@ -44,6 +44,7 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
   ],
   "topics": ["specs"],
   "grants": [
+    {"scope": "agent:implementation", "principal": "agent:implementation", "permissions": ["status"]},
     {"scope": "agent:test", "principal": "agent:implementation", "permissions": ["read"]},
     {"scope": "topic:specs", "principal": "agent:specs", "permissions": ["write", "status"]},
     {"scope": "topic:specs", "principal": "agent:implementation", "permissions": ["read"]},
@@ -53,6 +54,16 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
 ```
 
 ## Board and communication
+
+### Human supervision
+
+#### Reviewing reported work in a milestone
+
+An agent can publish a short progress document with a milestone, description, assignee, and lifecycle status in one `doc create` call. When work changes, a single `doc update` can record both a status and a fresh note if the caller has write and status permissions. The assignee identifies the principal responsible for the work. Scope grants govern access.
+
+An administrator can list active, blocked, and review work for a milestone across all scopes with one `doc search` call in table mode. The UUID, description, status, and assignee let the reviewer decide what to open. Use `doc get` with the selected UUID to inspect the full note. JSON search output also includes review comments and readable review locators. A registered non-admin can use the same workflow for accessible scopes.
+
+The table reflects what people and agents last recorded on the board. Update the note and status when progress or a blocker changes. The use-case examples count Corkboard invocations after board setup and identify local file preparation and human choices separately.
 
 ### Use cases
 
@@ -65,10 +76,160 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
 | Skill principal | board.access | skill-reference | The agents can find guidance by scope or description | Ask a board admin to grant read access to selected agents |
 | Specification and test agents | board.index | review | Readers can see the comments and open linked documents where they have read access | Record separate review outcomes and link to supporting documents by UUID |
 | Any agent | board.index | find-work | The agent can find a small set of related documents for the current milestone | Filter readable documents by milestone and concept |
+| Human administrator | board.supervision | supervise | The human sees the recorded status and who owns the work and can inspect the full note | Search a milestone across active and blocked and review statuses then open a selected progress document |
 | Document author | board.documents | reuse-name | Each document has its own UUID and the milestone resolves which pagination document to open | Reuse the name pagination in the same scope for two milestones |
 | Document author | board.validation | draft | The draft is formatted on write and the validator reports the missing fields | Save a well-formed draft missing required schema fields and run validation |
 | Document author | board.patching | patch | The patch updates one document or reports a stale base without changing it | Send a small patch against the exact bytes returned by doc get |
 | Board administrator | board.retention | retire | The selected files are removed and the prior board can be inspected offline | Preview archived documents then save a ZIP snapshot before applying cleanup |
+
+#### Bash sequences and command counts
+
+```bash
+#!/usr/bin/env bash
+
+# Source this file and call individual functions in a prepared worktree.
+# Each use case is independent. Counts are Corkboard calls after setup.
+# Each row with gh is one board call. jq, shasum, and input preparation are local steps.
+# The review workflow provisions topic:specs and the three agent principals.
+
+# Use case: handoff
+# Board calls: 4
+# Start with an indexed spec UUID. After reading the handoff, pass the UUID from its text to open_spec.
+usecase_handoff_publish() (
+  set -euo pipefail
+  spec_id=${1:?Provide the indexed spec UUID}
+  printf '# Pagination handoff\n\nImplement the spec with UUID %s.\n' "$spec_id" | gh corkboard --as agent:specs doc create --in topic:specs --name pagination-handoff --format md --milestone "v1 launch/Specs" --concept Cursor/Handoff --assignee agent:implementation --status active
+)
+usecase_handoff_read() (
+  set -euo pipefail
+  handoff_id=$(gh corkboard --as agent:implementation doc search --in topic:specs --milestone "v1 launch/Specs" --concept Cursor/Handoff --json | jq -er '.documents | if length == 1 then .[0].id else error("select the handoff UUID") end')
+  gh corkboard --as agent:implementation doc get "$handoff_id"
+)
+usecase_handoff_open_spec() {
+  gh corkboard --as agent:implementation doc get "${1:?Provide the spec UUID from the handoff}"
+}
+
+# Use case: self-note
+# Board calls: 3
+# Create the note now. Locate and open it in a later session using its known name.
+usecase_self_note_write() {
+  gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < "${1:?Provide the local note file}"
+}
+usecase_self_note_read() (
+  set -euo pipefail
+  note_id=$(gh corkboard --as agent:implementation doc locate --in agent:implementation --name follow-up)
+  gh corkboard --as agent:implementation doc get "$note_id"
+)
+
+# Use case: skill-reference
+# Board calls: 3
+# Start with a registered skill:review and its indexed guide. A human approves sharing.
+usecase_skill_reference() (
+  set -euo pipefail
+  gh corkboard --as human:owner access grant skill:review --to agent:implementation --permission read
+  guide_id=$(gh corkboard --as agent:implementation doc search --in skill:review --query review-guide --json | jq -er '.documents | if length == 1 then .[0].id else error("select the guide UUID") end')
+  gh corkboard --as agent:implementation doc get "$guide_id"
+)
+
+# Use case: review
+# Board calls: 6
+# Start with the spec UUID, then prepare the review file before calling finish.
+# The implementation agent already has a read grant on agent:test.
+usecase_review_start() (
+  set -euo pipefail
+  spec_id=${1:?Provide the indexed spec UUID}
+  gh corkboard --as agent:specs doc update "$spec_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
+  gh corkboard --as agent:test doc get "$spec_id"
+)
+usecase_review_finish() (
+  set -euo pipefail
+  spec_id=${1:?Provide the indexed spec UUID}
+  review_file=${2:?Provide the local test review file}
+  review_id=$(gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --json < "$review_file" | jq -er '.id')
+  gh corkboard --as agent:test doc update "$spec_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
+)
+usecase_review_read() (
+  set -euo pipefail
+  spec_id=${1:?Provide the indexed spec UUID}
+  review_id=$(gh corkboard --as agent:implementation doc search --in topic:specs --milestone "v1 launch/Specs" --concept Cursor/Pagination --status approved --json | jq -er --arg id "$spec_id" '.documents[] | select(.id == $id) | .reviewComments["agent:test"].locator')
+  gh corkboard --as agent:implementation doc get "$review_id"
+)
+
+# Use case: find-work
+# Board calls: 1
+usecase_find_work() {
+  gh corkboard --as agent:implementation doc search --milestone 'v1 launch/*' --concept 'Cursor/*' --format table
+}
+
+# Use case: supervise
+# Board calls: 2 for the human to list work and open one document.
+# The agent publishes with one call and can report a changed note and status with one call.
+# Grant the implementation agent status permission on its channel once during setup.
+example_supervision_setup() {
+  gh corkboard --as human:owner access grant agent:implementation --to agent:implementation --permission status
+}
+example_publish_progress() {
+  gh corkboard --as agent:implementation doc create --in agent:implementation --name pagination-implementation --format md --description "Implement the next cursor" --milestone "v1 launch/Specs" --concept Cursor/Implementation --assignee agent:implementation --status active < "${1:?Provide the local progress note}"
+}
+example_report_blocker() {
+  gh corkboard --as agent:implementation doc update "${1:?Provide the progress document UUID}" --stdin --status blocked < "${2:?Provide the updated progress note}"
+}
+usecase_supervise_list() {
+  gh corkboard --as human:owner doc search --milestone 'v1 launch/*' --status active --status blocked --status review --format table
+}
+usecase_supervise_open() {
+  gh corkboard --as human:owner doc get "${1:?Choose a UUID from the milestone results}"
+}
+
+# Use case: reuse-name
+# Board calls: 4
+# Two local spec files can use the same logical board name in different milestones.
+usecase_reuse_name() (
+  set -euo pipefail
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md --milestone "v1 launch/Specs" < "${1:?Provide the v1 spec}"
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md --milestone v2/Specs < "${2:?Provide the v2 spec}"
+  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --milestone "v1 launch/Specs"
+  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --milestone v2/Specs
+)
+
+# Use case: draft
+# Board calls: 2
+# Start with the registered JSON spec schema that requires title. Validation exits 1.
+usecase_draft() (
+  set -euo pipefail
+  draft_id=$(printf '%s\n' '{"pageSize":50}' | gh corkboard --as agent:specs doc create --in topic:specs --name draft-example --format json --schema spec --json | jq -er '.id')
+  gh corkboard --as agent:specs doc validate "$draft_id" --json
+)
+
+# Use case: patch
+# Board calls: 2
+# Prepare the patch locally from the saved base before calling usecase_patch_apply.
+usecase_patch_read() {
+  gh corkboard --as agent:specs doc get "${1:?Provide a document UUID}" > "${2:?Provide the local base filename}"
+}
+usecase_patch_apply() (
+  set -euo pipefail
+  doc_id=${1:?Provide the document UUID}
+  base_file=${2:?Provide the exact saved base filename}
+  patch_file=${3:?Provide the patch prepared against that base}
+  digest=$(shasum -a 256 < "$base_file")
+  gh corkboard --as agent:specs doc patch "$doc_id" --expect "${digest%% *}" < "$patch_file"
+)
+
+# Use case: retire
+# Board calls: 3
+# Start with archived documents. Review the preview and pass its planId to the apply function.
+usecase_retire_preview() {
+  gh corkboard --as human:owner index prune --json
+}
+usecase_retire_apply() (
+  plan_id=${1:?Provide the reviewed plan ID}
+  archive=${2:?Provide a new ZIP filename outside the board}
+  set -o noclobber
+  gh corkboard --as human:owner snapshot create --expect "$plan_id" > "$archive" &&
+  gh corkboard --as human:owner index prune --apply --expect "$plan_id"
+)
+```
 
 ### Workspace
 
@@ -134,12 +295,12 @@ Use a document's UUIDv4 to get, modify, delete, validate, or reference it. `doc 
 | Registered principal | `schema list [--format <format>]` | board.validation | List registered schemas ordered by format and ID |
 | Admin | `schema update <format> <schema-id>` | board.validation | Replace an existing schema with a valid definition from stdin |
 | Admin | `schema delete <format> <schema-id>` | board.validation | Delete an unused schema |
-| Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Create a unique name within the selected scope and milestone and return its UUID |
+| Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--preserve-row-order]` | board.formatting | Create a unique name within the selected scope and milestone and return its UUID |
 | Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
 | Scope read | `doc locate --in <scope> --name <name> [--milestone <text>]` | board.documents | Resolve an exact name within a scope and require the milestone when the name is ambiguous |
-| Registered principal | `doc search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table\|csv\|json>]` | board.documents | Filter accessible documents by scope and metadata with board-wide access for admins |
+| Registered principal | `doc search [--in <scope>] [--status <status>]... [--assignee <principal>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table\|csv\|json>]` | board.documents | Filter accessible documents by scope and metadata with board-wide access for admins |
 | Scope write | `doc patch <doc-id> --expect <sha256> [--preserve-row-order]` | board.patching | Apply a patch from stdin to the exact base revision and format the result |
-| Scope write for content, description, milestone or concept. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
+| Scope write for content, description, milestone, concept, or assignee. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
 | Admin | `index audit` | board.index | Report filesystem and index discrepancies without changing board data |
@@ -151,7 +312,7 @@ Use a document's UUIDv4 to get, modify, delete, validate, or reference it. `doc 
 
 Board commands in the table follow `gh corkboard --as <principal>`. Run help directly with `gh corkboard help`. Board commands address resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
-Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. Exit 0 for success. Exit 1 for validation failures, audit findings, or malformed document or patch content, with diagnostics on stdout. Exit 2 for usage, authorization, or operational failure, with errors on stderr. Sort search and validation lists lexically by scope, name, case-folded milestone, and UUID. Sort an unset milestone as an empty string.
+Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, concept, and assignee when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. Exit 0 for success. Exit 1 for validation failures, audit findings, or malformed document or patch content, with diagnostics on stdout. Exit 2 for usage, authorization, or operational failure, with errors on stderr. Sort search and validation lists lexically by scope, name, case-folded milestone, and UUID. Sort an unset milestone as an empty string.
 
 `doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
@@ -181,7 +342,7 @@ example_review_workflow() (
   gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
   gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
     --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
-    --status active --json < pagination.md
+    --assignee agent:specs --status active --json < pagination.md
   doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination \
     --milestone "v1 launch/Specs")
   gh corkboard --as agent:implementation doc get "$doc_id"
@@ -244,6 +405,7 @@ The review on 2026-11-21 checked exact versions and used the 100-star floor from
 | Metadata search and filesystem reconciliation | board.index | board |
 | Revision checked document patches | board.patching | board |
 | Obsolete documents and snapshots | board.retention | board |
+| Reported work and human oversight within a milestone | board.supervision | board |
 | Schema registry and validation profiles | board.validation | board |
 | Strict validation of the index and access policy | board.validation.internal | board.validation |
 | Principal topic and grant field validation | board.validation.internal.access | board.validation.internal |
@@ -293,7 +455,7 @@ Use `go-gitdiff` for parsing unified text and applying it in strict mode to a bu
 
 #### Catalog and reconciliation
 
-`index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. Validate structure with the built-in schema and check that IDs, paths, and logical name keys are unique. Go also checks scope and review author registration and exact path derivation. A malformed index blocks document selections and writes that would depend on it.
+`index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. Validate structure with the built-in schema and check that IDs, paths, and logical name keys are unique. Go also checks scope, assignee, and review author registration and exact path derivation. A malformed index blocks document selections and writes that would depend on it.
 
 The logical name key is scope, case-folded milestone, and name. An unset milestone is its own namespace. Format and schema do not distinguish names in the same namespace. For example, `pagination` can coexist in `topic:specs` at milestones `v1 launch/Specs` and `v2/Specs`. Check uniqueness under the board lock before create or a milestone update, including clearing the milestone. A collision exits 2 before changing the file or index. A milestone update changes the logical lookup key and retains the filename and UUID.
 
@@ -303,9 +465,11 @@ The logical name key is scope, case-folded milestone, and name. An unset milesto
 
 Set these fields with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace from the whole flag value before checking it and preserve its case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
 
+`assignee` is an optional registered principal ID. Set it with `--assignee <principal>` on create or update with write access. Check that the principal can read the document scope when assigning it. An omitted update flag keeps the current assignment and `--assignee ""` clears it. Grant changes leave the recorded assignment in place.
+
 `doc search` starts with all indexed documents for an admin. For other principals, keep only documents in scopes where the caller has at least one effective permission, including the implicit rights on its own channel. Apply this check before matching any search terms or preparing output, in every output format. A search for an inaccessible scope returns an empty successful result.
 
-Combine supplied filters with AND. `--in` matches one exact logical scope, such as `topic:specs`, `agent:test`, or `skill:review`. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
+Repeat `--status` to match any of the requested lifecycle states. Combine that status set with the other filters using AND. `--in` matches one exact logical scope, such as `topic:specs`, `agent:test`, or `skill:review`. `--assignee` matches one canonical principal ID. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each label filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
 
 `--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
 
@@ -317,7 +481,7 @@ New entries default to an empty description, `draft` status, and an empty `revie
 
 A review can link to any existing indexed document on the board that the reviewer can read. When returning review metadata, the CLI includes the locator only if the target is available to the reader. If the target is later deleted or the reader loses access, the index retains the stored locator and the CLI still returns the review text and outcome.
 
-Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported or conflicting entries. `index resync` preserves metadata at surviving paths subject to the archived-to-draft rule. It drops records for missing files and reports removals and status resets. Retain the UUID in an unindexed canonical filename. For a manually added `<name>.<format>` or `<name>.<schema-id>.<format>` file in a registered scope, allocate a UUID and rename it to the canonical filename. Adopted entries default to `draft` with empty reviews and no milestone or concept.
+Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported or conflicting entries. `index resync` preserves metadata at surviving paths subject to the archived-to-draft rule. It drops records for missing files and reports removals and status resets. Retain the UUID in an unindexed canonical filename. For a manually added `<name>.<format>` or `<name>.<schema-id>.<format>` file in a registered scope, allocate a UUID and rename it to the canonical filename. Adopted entries default to `draft` with empty reviews and no milestone, concept, or assignee.
 
 Before resync writes anything, reject duplicate UUIDs, a known UUID at a different path, or a logical name collision. Report the conflicting entries so an admin can resolve them. Rename newly adopted files atomically before publishing the reconciled index. If an index write fails, the UUIDs in any renamed files let a retry reuse them. A missing index can be rebuilt with the filename UUIDs, but milestones and other metadata come from the index. If same-name files would collide in the unassigned namespace, recover the index from a snapshot before reconciling. Resync preserves malformed or unsupported indexes for operator recovery.
 
@@ -329,6 +493,20 @@ All CLI operations affecting the board use an OS-backed lock released on process
 {
   "version": 1,
   "documents": [
+    {
+      "id": "53dd1654-7fab-459f-a414-dc91198c0c61",
+      "scope": "agent:implementation",
+      "name": "pagination-implementation",
+      "format": "md",
+      "path": "agents/implementation/53dd1654-7fab-459f-a414-dc91198c0c61--pagination-implementation.md",
+      "description": "Implement the next cursor",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Implementation",
+      "assignee": "agent:implementation",
+      "status": "active",
+      "reviewComments": {},
+      "sha256": "7a3d1a0429e5530a946dbd5713924cdf046433b2b9809725e66431ddc4c9e18f"
+    },
     {
       "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
       "scope": "agent:test",
@@ -349,6 +527,7 @@ All CLI operations affecting the board use an OS-backed lock released on process
       "description": "Requirements for cursor pagination",
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
+      "assignee": "agent:specs",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -394,7 +573,7 @@ In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6
 
 Use `doc search --format table` or `--format csv` for a compact summary. `--format json` is equivalent to `--json` and returns full document metadata. Specify one output selector per invocation. With neither selector, search prints the detailed text summary.
 
-Both compact formats start with `id`, `name`, `scope`, and `description`, followed in order by `status`, `milestone`, and `concept` where applicable. Keep `scope` even when filtering with `--in`. Omit `status`, `milestone`, or `concept` when its own filter is an exact match. Keep the corresponding column for an unfiltered field or a trailing-asterisk filter. An unset field appears as an empty cell when its column is present. Choose the columns from the filters so the header stays the same even when the result is empty.
+Both compact formats start with `id`, `name`, `scope`, and `description`, followed in order by `status`, `assignee`, `milestone`, and `concept` where applicable. Keep `scope` even when filtering with `--in`. Omit a column when its own filter fixes one value. Keep the column for unfiltered fields, multiple distinct statuses, and trailing-asterisk filters. An unset field appears as an empty cell when its column is present. Choose the columns from the filters so the header stays the same even when the result is empty.
 
 Cap each compact description at 60 Unicode code points including the suffix. For longer descriptions, keep the first 57 and append `...`. Use one row per document and preserve search result order. CSV writes a lowercase header and standard quoted records. Table output uses uppercase headings and aligned columns. Both write just the header when no documents match. JSON retains full descriptions and metadata regardless of applied filters.
 
@@ -440,6 +619,7 @@ Validate the persisted access policy before trusting its grants and the persiste
 | board.validation.internal.index | index/documents.json | documents[].description | required | schema and Go | string | 0–500 Unicode code points. Single-line display text. |
 | board.validation.internal.index | index/documents.json | documents[].milestone | optional | schema and Go | string | 1–64 ASCII characters total including slash separators. Full-string pattern ^[A-Za-z0-9][A-Za-z0-9 ._-]*(/[A-Za-z0-9][A-Za-z0-9 ._-]*)*$. Reject trailing whitespace in each segment. |
 | board.validation.internal.index | index/documents.json | documents[].concept | optional | schema | string | 1–48 ASCII characters total including slash separators. Each segment contains only letters. Full-string pattern ^[A-Za-z]+(/[A-Za-z]+)*$. |
+| board.validation.internal.index | index/documents.json | documents[].assignee | optional | schema and Go | string | Canonical registered principal ID. Check effective read access to the document scope when setting the assignment. |
 | board.validation.internal.index | index/documents.json | documents[].status | required | schema | string | One of the lifecycle states in lifecycle.csv. |
 | board.validation.internal.index | index/documents.json | documents[].sha256 | required | schema and audit | string | Exactly 64 lowercase hexadecimal characters. Audit compares it to the digest of the stored bytes on disk. |
 | board.validation.internal.index | index/documents.json | documents[].reviewComments | required | schema and Go | object | Allow an empty object. Each key is a registered principal ID. Each value is one review object. |
@@ -542,6 +722,7 @@ interface DocumentMetadata {
   description: string;
   milestone?: string;
   concept?: string;
+  assignee?: PrincipalId;
   status: Status;
   reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
 }

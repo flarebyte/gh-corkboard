@@ -23,7 +23,10 @@ reports: [{
 			notes: ["board.board"]
 		}, {
 			title: "Use cases"
-			notes: ["board.usecases"]
+			notes: ["board.usecases", "board.usecases.workflow"]
+		}, {
+			title: "Human supervision"
+			notes: ["board.supervision"]
 		}]
 	}, {
 		title: "Command interface"
@@ -91,6 +94,7 @@ notes: list.Concat([[
 	{name: "board.validation.projection.markdown", title: "Markdown projection example", filepath: "examples/markdown-projection.json"},
 	{name: "board.access.permissions", title: "Permissions by scope", filepath: "examples/scope-permissions.csv"},
 	{name: "board.usecases", title: "Core workflows", filepath: "examples/usecases.csv"},
+	{name: "board.usecases.workflow", title: "Bash sequences and command counts", filepath: "examples/workflows/use-cases.sh"},
 	{name: "board.validation.formats", title: "Validation inputs by format", filepath: "examples/validation-inputs.csv"},
 	{name: "board.validation.internal.fields", title: "Field validation rules", filepath: "examples/internal-json-validation.csv"},
 ], _proseNotes, _commandOutputNotes])

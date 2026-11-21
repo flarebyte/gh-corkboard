@@ -12,7 +12,8 @@
           "scope": "agent:implementation",
           "permissions": [
             "read",
-            "write"
+            "write",
+            "status"
           ]
         },
         {

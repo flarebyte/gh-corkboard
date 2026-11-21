@@ -48,6 +48,7 @@ interface DocumentMetadata {
   description: string;
   milestone?: string;
   concept?: string;
+  assignee?: PrincipalId;
   status: Status;
   reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
 }

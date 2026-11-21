@@ -4,6 +4,7 @@ self-note,Any agent,Write under its own agent scope,The agent can recover local 
 skill-reference,Skill principal,Ask a board admin to grant read access to selected agents,The agents can find guidance by scope or description,board.access
 review,Specification and test agents,Record separate review outcomes and link to supporting documents by UUID,Readers can see the comments and open linked documents where they have read access,board.index
 find-work,Any agent,Filter readable documents by milestone and concept,The agent can find a small set of related documents for the current milestone,board.index
+supervise,Human administrator,Search a milestone across active and blocked and review statuses then open a selected progress document,The human sees the recorded status and who owns the work and can inspect the full note,board.supervision
 reuse-name,Document author,Reuse the name pagination in the same scope for two milestones,Each document has its own UUID and the milestone resolves which pagination document to open,board.documents
 draft,Document author,Save a well-formed draft missing required schema fields and run validation,The draft is formatted on write and the validator reports the missing fields,board.validation
 patch,Document author,Send a small patch against the exact bytes returned by doc get,The patch updates one document or reports a stale base without changing it,board.patching

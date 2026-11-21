@@ -89,7 +89,8 @@ example_help_doc_search() {
   #
   # Flags
   #   --in <scope>         Match one exact agent, skill, or topic scope
-  #   --status <status>    Match one lifecycle status
+  #   --status <status>    Match a lifecycle status. Repeat to match any given value
+  #   --assignee <principal>  Match the assigned principal
   #   --milestone <text>   Match a milestone or use a trailing * for a prefix
   #   --concept <text>     Match a concept or use a trailing * for a prefix
   #   --query <text>       Search names, descriptions, milestones, and concepts
@@ -131,7 +132,7 @@ example_access_whoami() {
   gh corkboard --as agent:implementation access whoami
   # Expected stdout
   # agent:implementation (member)
-  # agent:implementation  read, write
+  # agent:implementation  read, write, status
   # agent:test            read
   # topic:specs           read
 }

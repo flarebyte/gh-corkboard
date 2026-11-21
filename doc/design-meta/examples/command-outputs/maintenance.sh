@@ -45,6 +45,7 @@ example_snapshot_create() {
   # .gh-corkboard/
   # .gh-corkboard/agents/
   # .gh-corkboard/agents/implementation/
+  # .gh-corkboard/agents/implementation/53dd1654-7fab-459f-a414-dc91198c0c61--pagination-implementation.md
   # .gh-corkboard/agents/specs/
   # .gh-corkboard/agents/test/
   # .gh-corkboard/agents/test/b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md

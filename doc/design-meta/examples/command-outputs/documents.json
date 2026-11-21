@@ -8,6 +8,7 @@
       "description": "Requirements for cursor pagination",
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
+      "assignee": "agent:specs",
       "status": "active",
       "reviewComments": {}
     },
@@ -35,6 +36,7 @@
           "description": "Requirements for cursor pagination",
           "milestone": "v1 launch/Specs",
           "concept": "Cursor/Pagination",
+          "assignee": "agent:specs",
           "status": "approved",
           "reviewComments": {
             "agent:specs": {
@@ -50,6 +52,22 @@
         }
       ]
     },
+    "doc search (milestone supervision)": {
+      "documents": [
+        {
+          "id": "53dd1654-7fab-459f-a414-dc91198c0c61",
+          "scope": "agent:implementation",
+          "name": "pagination-implementation",
+          "format": "md",
+          "description": "Implement the next cursor",
+          "milestone": "v1 launch/Specs",
+          "concept": "Cursor/Implementation",
+          "assignee": "agent:implementation",
+          "status": "active",
+          "reviewComments": {}
+        }
+      ]
+    },
     "doc search (inaccessible scope)": {
       "documents": []
     },
@@ -61,6 +79,7 @@
       "description": "Requirements for cursor pagination",
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
+      "assignee": "agent:specs",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -82,6 +101,7 @@
       "description": "Requirements for cursor pagination",
       "milestone": "v1.1",
       "concept": "PaginationCursors",
+      "assignee": "agent:specs",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -114,6 +134,7 @@
       "description": "Requirements for cursor pagination",
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
+      "assignee": "agent:specs",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {

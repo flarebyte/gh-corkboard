@@ -2,6 +2,20 @@
   "version": 1,
   "documents": [
     {
+      "id": "53dd1654-7fab-459f-a414-dc91198c0c61",
+      "scope": "agent:implementation",
+      "name": "pagination-implementation",
+      "format": "md",
+      "path": "agents/implementation/53dd1654-7fab-459f-a414-dc91198c0c61--pagination-implementation.md",
+      "description": "Implement the next cursor",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Implementation",
+      "assignee": "agent:implementation",
+      "status": "active",
+      "reviewComments": {},
+      "sha256": "7a3d1a0429e5530a946dbd5713924cdf046433b2b9809725e66431ddc4c9e18f"
+    },
+    {
       "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
       "scope": "agent:test",
       "name": "pagination-review",
@@ -21,6 +35,7 @@
       "description": "Requirements for cursor pagination",
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
+      "assignee": "agent:specs",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
