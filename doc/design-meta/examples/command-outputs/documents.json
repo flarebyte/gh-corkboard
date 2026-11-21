@@ -23,6 +23,10 @@
       "status": "draft",
       "reviewComments": {}
     },
+    "doc get (with revision)": {
+      "content": "# Pagination\n\n## Acceptance criteria\n\n- Return the next cursor when more results are available.\n",
+      "revision": "bf706ffa8256beee042e4d36fd262ed2afed5c0408962814edcaddc83be4f44a"
+    },
     "doc locate": {
       "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb"
     },

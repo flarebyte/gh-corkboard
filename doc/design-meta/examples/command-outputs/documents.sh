@@ -32,6 +32,12 @@ example_doc_get() {
   # - Return the next cursor when more results are available.
 }
 
+# doc get (content and revision for a guarded write)
+# See documents.json for the JSON stdout. Save it before preparing the write.
+example_doc_get_with_revision() {
+  gh corkboard --as agent:specs doc get 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --with-revision
+}
+
 # doc get piped to jq
 example_doc_get_json_pipe() (
   set -o pipefail
@@ -117,9 +123,12 @@ example_doc_search_inaccessible_scope() {
   # No documents matched.
 }
 
-# doc update
+# doc update (approval of the saved content)
+# The reviewer inspected the content from pagination.base.json.
 example_doc_update() {
-  gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
+  local revision
+  revision=$(jq -er '.revision' pagination.base.json) || return
+  gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "$revision" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb. Status: approved. Review by agent:test: pass.
 }
@@ -144,11 +153,11 @@ example_doc_update_content() {
 }
 
 # doc patch (Markdown)
-# Save the exact bytes from doc get as pagination.before.md before drafting the patch.
+# Save doc get --with-revision as pagination.base.json. Draft the patch from its content.
 example_doc_patch_markdown() {
-  local expected
-  expected=$(shasum -a 256 < pagination.before.md) || return
-  gh corkboard --as agent:specs doc patch 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "${expected%% *}" <<'PATCH'
+  local revision
+  revision=$(jq -er '.revision' pagination.base.json) || return
+  gh corkboard --as agent:specs doc patch 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "$revision" <<'PATCH'
 --- document
 +++ document
 @@ -5 +5 @@
@@ -160,11 +169,11 @@ PATCH
 }
 
 # doc patch (CSV)
-# The captured priorities.before.csv contains id,priority followed by p1,01 and p2,02.
+# The saved priorities.base.json has CSV content with id,priority followed by p1,01 and p2,02.
 example_doc_patch_csv() {
-  local expected
-  expected=$(shasum -a 256 < priorities.before.csv) || return
-  gh corkboard --as agent:specs doc patch 11290eeb-00c7-44c0-83e9-a4618ec9d3f4 --expect "${expected%% *}" <<'PATCH'
+  local revision
+  revision=$(jq -er '.revision' priorities.base.json) || return
+  gh corkboard --as agent:specs doc patch 11290eeb-00c7-44c0-83e9-a4618ec9d3f4 --expect "$revision" <<'PATCH'
 --- document
 +++ document
 @@ -1,3 +1,4 @@
@@ -179,11 +188,11 @@ PATCH
 }
 
 # doc patch (JSON)
-# pagination.before.json contains the exact doc get output used to prepare the merge patch.
+# Save doc get --with-revision as pagination-settings.base.json before drafting the merge patch.
 example_doc_patch_json() {
-  local expected
-  expected=$(shasum -a 256 < pagination.before.json) || return
-  gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}" <<'PATCH'
+  local revision
+  revision=$(jq -er '.revision' pagination-settings.base.json) || return
+  gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "$revision" <<'PATCH'
 {"pageSize":50}
 PATCH
   # Expected stdout

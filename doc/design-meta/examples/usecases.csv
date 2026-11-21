@@ -7,5 +7,5 @@ find-work,Any agent,Filter readable documents by milestone and concept,The agent
 supervise,Human administrator,Search a milestone across active and blocked and review statuses then open a selected progress document,The human sees the recorded status and who owns the work and can inspect the full note,board.supervision
 reuse-name,Document author,Reuse the name pagination in the same scope for two milestones,Each document has its own UUID and the milestone resolves which pagination document to open,board.documents
 draft,Document author,Save a well-formed draft missing required schema fields and run validation,The draft is formatted on write and the validator reports the missing fields,board.validation
-patch,Document author,Send a small patch against the exact bytes returned by doc get,The patch updates one document or reports a stale base without changing it,board.patching
+patch,Document author,Read content with its revision and send a small patch using that revision,The patch updates one document or reports a stale base without changing it,board.patching
 retire,Board administrator,Preview archived documents then save a ZIP snapshot before applying cleanup,The selected files are removed and the prior board can be inspected offline,board.retention

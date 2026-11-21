@@ -2,7 +2,7 @@
 
 # Source this file and call individual functions in a prepared worktree.
 # Each use case is independent. Counts are Corkboard calls after setup.
-# Each row with gh is one board call. jq, shasum, and input preparation are local steps.
+# Each row with gh is one board call. jq and input preparation are local steps.
 # The review workflow provisions topic:specs and the three agent principals.
 
 # Use case: handoff
@@ -46,20 +46,23 @@ usecase_skill_reference() (
 
 # Use case: review
 # Board calls: 6
-# Start with the spec UUID, then prepare the review file before calling finish.
+# Save the reviewed content and revision before preparing the review file and calling finish.
 # The implementation agent already has a read grant on agent:test.
 usecase_review_start() (
   set -euo pipefail
   spec_id=${1:?Provide the indexed spec UUID}
   gh corkboard --as agent:specs doc update "$spec_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
-  gh corkboard --as agent:test doc get "$spec_id"
+  base_file=${2:?Provide the local review base JSON filename}
+  gh corkboard --as agent:test doc get "$spec_id" --with-revision > "$base_file"
+  jq -j '.content' "$base_file"
 )
 usecase_review_finish() (
   set -euo pipefail
   spec_id=${1:?Provide the indexed spec UUID}
   review_file=${2:?Provide the local test review file}
+  revision=$(jq -er '.revision' "${3:?Provide the saved review base JSON}")
   review_id=$(gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --json < "$review_file" | jq -er '.id')
-  gh corkboard --as agent:test doc update "$spec_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
+  gh corkboard --as agent:test doc update "$spec_id" --expect "$revision" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
 )
 usecase_review_read() (
   set -euo pipefail
@@ -116,17 +119,20 @@ usecase_draft() (
 
 # Use case: patch
 # Board calls: 2
-# Prepare the patch locally from the saved base before calling usecase_patch_apply.
-usecase_patch_read() {
-  gh corkboard --as agent:specs doc get "${1:?Provide a document UUID}" > "${2:?Provide the local base filename}"
-}
+# Build the patch from the extracted content and keep the saved JSON for the revision.
+usecase_patch_read() (
+  set -euo pipefail
+  base_file=${2:?Provide the local base JSON filename}
+  gh corkboard --as agent:specs doc get "${1:?Provide a document UUID}" --with-revision > "$base_file"
+  jq -j '.content' "$base_file" > "${3:?Provide a separate filename for the extracted content}"
+)
 usecase_patch_apply() (
   set -euo pipefail
   doc_id=${1:?Provide the document UUID}
-  base_file=${2:?Provide the exact saved base filename}
+  base_file=${2:?Provide the saved base JSON filename}
   patch_file=${3:?Provide the patch prepared against that base}
-  digest=$(shasum -a 256 < "$base_file")
-  gh corkboard --as agent:specs doc patch "$doc_id" --expect "${digest%% *}" < "$patch_file"
+  revision=$(jq -er '.revision' "$base_file")
+  gh corkboard --as agent:specs doc patch "$doc_id" --expect "$revision" < "$patch_file"
 )
 
 # Use case: retire

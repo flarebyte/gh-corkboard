@@ -36,8 +36,8 @@
   },
   "jsonStderr": {
     "doc patch (stale base)": {
-      "code": "patch_base_changed",
-      "message": "Document changed since the base was read. Read it again and regenerate the patch."
+      "code": "revision_mismatch",
+      "message": "Document changed since it was read. Get the current content and revision before retrying."
     }
   }
 }

@@ -39,7 +39,7 @@ example_malformed_input_on_write() {
 # Invalid concept
 # Invalid metadata flags exit 2 and leave the document and index untouched.
 example_invalid_concept() {
-  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb +    --concept "cursor pagination"
+  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --concept "cursor pagination"
   # Expected stderr
   # error: --concept must be 1–48 characters in slash-separated segments of ASCII letters.
 }
@@ -61,12 +61,13 @@ example_ambiguous_locate() {
 }
 
 # Stale patch base
-# A changed base exits 2 and leaves the file and index untouched.
+# Save pagination-settings.base.json with doc get --with-revision, then change the document in a separate write.
+# Applying the patch against the saved revision exits 2 and leaves the file and index untouched.
 example_stale_patch_base() {
-  local expected
-  expected=$(shasum -a 256 < pagination.before.json) || return
+  local revision
+  revision=$(jq -er '.revision' pagination-settings.base.json) || return
   printf '%s\n' '{"pageSize":50}' |
-    gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}"
+    gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "$revision"
   # Expected stderr
-  # error: document changed since the base was read. Read it again and regenerate the patch.
+  # error: document changed since it was read. Get the current content and revision before retrying.
 }

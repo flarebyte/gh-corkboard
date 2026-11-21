@@ -71,7 +71,7 @@ example_help_doc_patch() {
   # Apply a patch from stdin to an existing document. Requires write access.
   #
   # Usage
-  #   gh corkboard --as <principal> doc patch <doc-id> --expect <sha256> [flags]
+  #   gh corkboard --as <principal> doc patch <doc-id> --expect <revision> [flags]
   #
   # Input
   #   Markdown and CSV use a unified diff. JSON uses RFC 7396 Merge Patch.
@@ -80,13 +80,15 @@ example_help_doc_patch() {
   #   Writes a patch summary to stdout. A stale base exits 2 with an error on stderr.
   #
   # Flags
-  #   --expect <sha256>      Required SHA-256 of the exact bytes read with doc get
+  #   --expect <revision>    Required revision from doc get --with-revision
   #   --preserve-row-order   Keep CSV row order even when the first header is id or name
   #   --json                 Emit updated document metadata as JSON
   #   -h, --help             Show this help
   #
   # Example
-  #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$base_sha256" < changes.diff
+  #   gh corkboard --as agent:specs doc get "$doc_id" --with-revision > base.json
+  #   revision=$(jq -er '.revision' base.json)
+  #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$revision" < changes.diff
 }
 
 # Search help
@@ -374,7 +376,7 @@ example_malformed_input_on_write() {
 # Invalid concept
 # Invalid metadata flags exit 2 and leave the document and index untouched.
 example_invalid_concept() {
-  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb +    --concept "cursor pagination"
+  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --concept "cursor pagination"
   # Expected stderr
   # error: --concept must be 1–48 characters in slash-separated segments of ASCII letters.
 }
@@ -396,14 +398,15 @@ example_ambiguous_locate() {
 }
 
 # Stale patch base
-# A changed base exits 2 and leaves the file and index untouched.
+# Save pagination-settings.base.json with doc get --with-revision, then change the document in a separate write.
+# Applying the patch against the saved revision exits 2 and leaves the file and index untouched.
 example_stale_patch_base() {
-  local expected
-  expected=$(shasum -a 256 < pagination.before.json) || return
+  local revision
+  revision=$(jq -er '.revision' pagination-settings.base.json) || return
   printf '%s\n' '{"pageSize":50}' |
-    gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}"
+    gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "$revision"
   # Expected stderr
-  # error: document changed since the base was read. Read it again and regenerate the patch.
+  # error: document changed since it was read. Get the current content and revision before retrying.
 }
 ```
 
@@ -450,8 +453,8 @@ example_stale_patch_base() {
   },
   "jsonStderr": {
     "doc patch (stale base)": {
-      "code": "patch_base_changed",
-      "message": "Document changed since the base was read. Read it again and regenerate the patch."
+      "code": "revision_mismatch",
+      "message": "Document changed since it was read. Get the current content and revision before retrying."
     }
   }
 }
@@ -496,6 +499,12 @@ example_doc_get() {
   # ## Acceptance criteria
   #
   # - Return the next cursor when more results are available.
+}
+
+# doc get (content and revision for a guarded write)
+# See documents.json for the JSON stdout. Save it before preparing the write.
+example_doc_get_with_revision() {
+  gh corkboard --as agent:specs doc get 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --with-revision
 }
 
 # doc get piped to jq
@@ -583,9 +592,12 @@ example_doc_search_inaccessible_scope() {
   # No documents matched.
 }
 
-# doc update
+# doc update (approval of the saved content)
+# The reviewer inspected the content from pagination.base.json.
 example_doc_update() {
-  gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
+  local revision
+  revision=$(jq -er '.revision' pagination.base.json) || return
+  gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "$revision" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb. Status: approved. Review by agent:test: pass.
 }
@@ -610,11 +622,11 @@ example_doc_update_content() {
 }
 
 # doc patch (Markdown)
-# Save the exact bytes from doc get as pagination.before.md before drafting the patch.
+# Save doc get --with-revision as pagination.base.json. Draft the patch from its content.
 example_doc_patch_markdown() {
-  local expected
-  expected=$(shasum -a 256 < pagination.before.md) || return
-  gh corkboard --as agent:specs doc patch 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "${expected%% *}" <<'PATCH'
+  local revision
+  revision=$(jq -er '.revision' pagination.base.json) || return
+  gh corkboard --as agent:specs doc patch 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "$revision" <<'PATCH'
 --- document
 +++ document
 @@ -5 +5 @@
@@ -626,11 +638,11 @@ PATCH
 }
 
 # doc patch (CSV)
-# The captured priorities.before.csv contains id,priority followed by p1,01 and p2,02.
+# The saved priorities.base.json has CSV content with id,priority followed by p1,01 and p2,02.
 example_doc_patch_csv() {
-  local expected
-  expected=$(shasum -a 256 < priorities.before.csv) || return
-  gh corkboard --as agent:specs doc patch 11290eeb-00c7-44c0-83e9-a4618ec9d3f4 --expect "${expected%% *}" <<'PATCH'
+  local revision
+  revision=$(jq -er '.revision' priorities.base.json) || return
+  gh corkboard --as agent:specs doc patch 11290eeb-00c7-44c0-83e9-a4618ec9d3f4 --expect "$revision" <<'PATCH'
 --- document
 +++ document
 @@ -1,3 +1,4 @@
@@ -645,11 +657,11 @@ PATCH
 }
 
 # doc patch (JSON)
-# pagination.before.json contains the exact doc get output used to prepare the merge patch.
+# Save doc get --with-revision as pagination-settings.base.json before drafting the merge patch.
 example_doc_patch_json() {
-  local expected
-  expected=$(shasum -a 256 < pagination.before.json) || return
-  gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}" <<'PATCH'
+  local revision
+  revision=$(jq -er '.revision' pagination-settings.base.json) || return
+  gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "$revision" <<'PATCH'
 {"pageSize":50}
 PATCH
   # Expected stdout
@@ -701,6 +713,10 @@ example_doc_validate() {
       "concept": "Cursor/Pagination",
       "status": "draft",
       "reviewComments": {}
+    },
+    "doc get (with revision)": {
+      "content": "# Pagination\n\n## Acceptance criteria\n\n- Return the next cursor when more results are available.\n",
+      "revision": "bf706ffa8256beee042e4d36fd262ed2afed5c0408962814edcaddc83be4f44a"
     },
     "doc locate": {
       "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb"

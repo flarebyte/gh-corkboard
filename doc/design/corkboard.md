@@ -79,7 +79,7 @@ The table reflects what people and agents last recorded on the board. Update the
 | Human administrator | board.supervision | supervise | The human sees the recorded status and who owns the work and can inspect the full note | Search a milestone across active and blocked and review statuses then open a selected progress document |
 | Document author | board.documents | reuse-name | Each document has its own UUID and the milestone resolves which pagination document to open | Reuse the name pagination in the same scope for two milestones |
 | Document author | board.validation | draft | The draft is formatted on write and the validator reports the missing fields | Save a well-formed draft missing required schema fields and run validation |
-| Document author | board.patching | patch | The patch updates one document or reports a stale base without changing it | Send a small patch against the exact bytes returned by doc get |
+| Document author | board.patching | patch | The patch updates one document or reports a stale base without changing it | Read content with its revision and send a small patch using that revision |
 | Board administrator | board.retention | retire | The selected files are removed and the prior board can be inspected offline | Preview archived documents then save a ZIP snapshot before applying cleanup |
 
 #### Bash sequences and command counts
@@ -89,7 +89,7 @@ The table reflects what people and agents last recorded on the board. Update the
 
 # Source this file and call individual functions in a prepared worktree.
 # Each use case is independent. Counts are Corkboard calls after setup.
-# Each row with gh is one board call. jq, shasum, and input preparation are local steps.
+# Each row with gh is one board call. jq and input preparation are local steps.
 # The review workflow provisions topic:specs and the three agent principals.
 
 # Use case: handoff
@@ -133,20 +133,23 @@ usecase_skill_reference() (
 
 # Use case: review
 # Board calls: 6
-# Start with the spec UUID, then prepare the review file before calling finish.
+# Save the reviewed content and revision before preparing the review file and calling finish.
 # The implementation agent already has a read grant on agent:test.
 usecase_review_start() (
   set -euo pipefail
   spec_id=${1:?Provide the indexed spec UUID}
   gh corkboard --as agent:specs doc update "$spec_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
-  gh corkboard --as agent:test doc get "$spec_id"
+  base_file=${2:?Provide the local review base JSON filename}
+  gh corkboard --as agent:test doc get "$spec_id" --with-revision > "$base_file"
+  jq -j '.content' "$base_file"
 )
 usecase_review_finish() (
   set -euo pipefail
   spec_id=${1:?Provide the indexed spec UUID}
   review_file=${2:?Provide the local test review file}
+  revision=$(jq -er '.revision' "${3:?Provide the saved review base JSON}")
   review_id=$(gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --json < "$review_file" | jq -er '.id')
-  gh corkboard --as agent:test doc update "$spec_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
+  gh corkboard --as agent:test doc update "$spec_id" --expect "$revision" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
 )
 usecase_review_read() (
   set -euo pipefail
@@ -203,17 +206,20 @@ usecase_draft() (
 
 # Use case: patch
 # Board calls: 2
-# Prepare the patch locally from the saved base before calling usecase_patch_apply.
-usecase_patch_read() {
-  gh corkboard --as agent:specs doc get "${1:?Provide a document UUID}" > "${2:?Provide the local base filename}"
-}
+# Build the patch from the extracted content and keep the saved JSON for the revision.
+usecase_patch_read() (
+  set -euo pipefail
+  base_file=${2:?Provide the local base JSON filename}
+  gh corkboard --as agent:specs doc get "${1:?Provide a document UUID}" --with-revision > "$base_file"
+  jq -j '.content' "$base_file" > "${3:?Provide a separate filename for the extracted content}"
+)
 usecase_patch_apply() (
   set -euo pipefail
   doc_id=${1:?Provide the document UUID}
-  base_file=${2:?Provide the exact saved base filename}
+  base_file=${2:?Provide the saved base JSON filename}
   patch_file=${3:?Provide the patch prepared against that base}
-  digest=$(shasum -a 256 < "$base_file")
-  gh corkboard --as agent:specs doc patch "$doc_id" --expect "${digest%% *}" < "$patch_file"
+  revision=$(jq -er '.revision' "$base_file")
+  gh corkboard --as agent:specs doc patch "$doc_id" --expect "$revision" < "$patch_file"
 )
 
 # Use case: retire
@@ -296,11 +302,11 @@ Use a document's UUIDv4 to get, modify, delete, validate, or reference it. `doc 
 | Admin | `schema update <format> <schema-id>` | board.validation | Replace an existing schema with a valid definition from stdin |
 | Admin | `schema delete <format> <schema-id>` | board.validation | Delete an unused schema |
 | Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--preserve-row-order]` | board.formatting | Create a unique name within the selected scope and milestone and return its UUID |
-| Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
+| Scope read | `doc get <doc-id> [--with-revision]` | board.documents | Write stored bytes or return content and its revision together as JSON |
 | Scope read | `doc locate --in <scope> --name <name> [--milestone <text>]` | board.documents | Resolve an exact name within a scope and require the milestone when the name is ambiguous |
 | Registered principal | `doc search [--in <scope>] [--status <status>]... [--assignee <principal>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table\|csv\|json>]` | board.documents | Filter accessible documents by scope and metadata with board-wide access for admins |
-| Scope write | `doc patch <doc-id> --expect <sha256> [--preserve-row-order]` | board.patching | Apply a patch from stdin to the exact base revision and format the result |
-| Scope write for content, description, milestone, concept, or assignee. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
+| Scope write | `doc patch <doc-id> --expect <revision> [--preserve-row-order]` | board.patching | Apply a patch from stdin to the exact base revision and format the result |
+| Scope write for content, description, milestone, concept, or assignee. Scope status for lifecycle or own review. | `doc update <doc-id> [--expect <revision>] [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
 | Admin | `index audit` | board.index | Report filesystem and index discrepancies without changing board data |
@@ -314,7 +320,7 @@ Board commands in the table follow `gh corkboard --as <principal>`. Run help dir
 
 Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, concept, and assignee when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. Exit 0 for success. Exit 1 for validation failures, audit findings, or malformed document or patch content, with diagnostics on stdout. Exit 2 for usage, authorization, or operational failure, with errors on stderr. Sort search and validation lists lexically by scope, name, case-folded milestone, and UUID. Sort an unset milestone as an empty string.
 
-`doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
+By default, `doc get` and `schema get` write exactly the stored bytes to stdout. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Reads take no revision argument. When preparing a guarded write, use `doc get --with-revision` to fetch the content and its revision together. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
 Find default text, JSON, raw streams, and representative diagnostics in the [CLI output examples](command-outputs.md).
 
@@ -347,9 +353,12 @@ example_review_workflow() (
     --milestone "v1 launch/Specs")
   gh corkboard --as agent:implementation doc get "$doc_id"
   gh corkboard --as agent:specs doc update "$doc_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
+  review_base=$(gh corkboard --as agent:test doc get "$doc_id" --with-revision)
+  jq -j '.content' <<< "$review_base"
+  revision=$(jq -er '.revision' <<< "$review_base")
   gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
   review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review)
-  gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
+  gh corkboard --as agent:test doc update "$doc_id" --expect "$revision" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
   gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
     --milestone "v1 launch/specs" --concept cursor/pagination --json
   gh corkboard --as agent:implementation doc get "$review_id"
@@ -439,13 +448,17 @@ For a successful `doc update --stdin`, set `formattingChanged` in the JSON resul
 
 #### Patch an existing document
 
-`doc patch <doc-id> --expect <sha256>` reads a patch from stdin and requires write access. The indexed document format selects the patch syntax. Keep `doc update --stdin` for full replacements. To create a patch, save the exact bytes from `doc get`, derive the patch from that copy, and pass its lowercase hexadecimal SHA-256 digest to `--expect`. Use the hash of the saved base, including its newlines.
+`doc patch <doc-id> --expect <revision>` reads a patch from stdin and requires write access. The indexed document format selects the patch syntax. Use `doc update --stdin` for full replacements.
+
+To prepare a patch, save the JSON from `doc get <doc-id> --with-revision`. It contains `content` as a UTF-8 string and `revision` as a token. Both come from the same authorized read of the current file under the board lock. Corkboard computes the token as the lowercase hexadecimal SHA-256 of those exact bytes, including final newlines. Callers copy the token verbatim. Use `jq -j '.content'` to extract the original bytes, including any final newline, and `jq -er '.revision'` to extract the token. If the stored file contains invalid UTF-8, this mode exits 2 with an error on stderr and leaves stdout empty. Ordinary `doc get` still returns the raw bytes.
 
 For Markdown and CSV, accept one textual unified diff with `---` and `+++` headers and at least one hunk. Use `diff -u` on the saved base and an edited copy to generate the hunk ranges. Header names are opaque labels, and `document` works for both. The UUID selects the target. Match every hunk's position and context exactly, including line endings. Reject multi-file patches, binary data, file creation or deletion markers, and Git rename or mode metadata. For CSV, hunks refer to physical lines, including lines inside quoted cells. Parse the full resulting CSV and apply the normal formatting and sorting rules. `--preserve-row-order` works for CSV patches.
 
 For JSON, use RFC 7396. Merge objects recursively, delete an object member whose patch value is `null`, and replace arrays as whole values. A non-object root patch replaces the root value. Parse the base and patch using the native JSON rules for document content and preserve numeric tokens. The merge operates on values and serializes the result in the canonical JSON format. Use full replacement to give an object member the literal value `null`. [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396#section-2)
 
-Under the board lock, check authorization and hash the current file bytes before applying the patch. A changed base or mismatched hunk exits 2 and writes nothing. In JSON mode, stderr carries a diagnostic object with `code` and `message`. Use `patch_base_changed` for a digest mismatch and `patch_context_mismatch` for a hunk mismatch. Read the document again and regenerate the patch from that base. Malformed patch input or a result with invalid native syntax exits 1 with diagnostics and performs no write. Schema validation remains a separate command.
+`--expect` is required for `doc patch` and optional on `doc update`. Use it on a replacement or review when the change depends on the document content you read. Ordinary updates, including status changes, can omit it. The flag takes a 64-character lowercase hexadecimal revision token and does not change the permissions required for the requested operation. A missing required token or malformed token is a usage error that points to `doc get --with-revision`.
+
+Under the board lock, check authorization and compare the supplied revision with the current file bytes before changing content or metadata. A changed revision or mismatched patch hunk exits 2 and leaves both the file and index unchanged. In JSON mode, stderr carries a diagnostic object with `code` and `message`. Use `revision_mismatch` for a changed revision and `patch_context_mismatch` for a hunk mismatch. Reread the content and reconsider the change before retrying. Malformed patch input or a result with invalid native syntax exits 1 with diagnostics and performs no write. Schema validation remains a separate command.
 
 Apply a patch to a temporary result and use the established document write and index update flow after all checks pass. The document keeps its ID and existing metadata, subject to the usual archived-to-draft rule when bytes change. Successful patch output has the same document metadata shape as a content update. For text patches, `formattingChanged` compares the patched text with the formatted result. When true, the default text output adds `Formatting changed the patched content.` JSON patches produce canonical JSON directly, so their results omit this field.
 
@@ -729,6 +742,11 @@ interface DocumentMetadata {
 
 interface DocumentUpdateResult extends DocumentMetadata {
   formattingChanged?: boolean; // Present for stdin replacements and text patches
+}
+
+interface DocumentWithRevision {
+  content: string; // Exact stored text
+  revision: string; // Pass verbatim to --expect
 }
 
 interface Index {

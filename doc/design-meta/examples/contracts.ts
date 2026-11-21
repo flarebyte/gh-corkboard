@@ -57,6 +57,11 @@ interface DocumentUpdateResult extends DocumentMetadata {
   formattingChanged?: boolean; // Present for stdin replacements and text patches
 }
 
+interface DocumentWithRevision {
+  content: string; // Exact stored text
+  revision: string; // Pass verbatim to --expect
+}
+
 interface Index {
   version: 1;
   documents: IndexEntry[];

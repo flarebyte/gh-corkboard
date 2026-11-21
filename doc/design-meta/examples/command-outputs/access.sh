@@ -60,7 +60,7 @@ example_help_doc_patch() {
   # Apply a patch from stdin to an existing document. Requires write access.
   #
   # Usage
-  #   gh corkboard --as <principal> doc patch <doc-id> --expect <sha256> [flags]
+  #   gh corkboard --as <principal> doc patch <doc-id> --expect <revision> [flags]
   #
   # Input
   #   Markdown and CSV use a unified diff. JSON uses RFC 7396 Merge Patch.
@@ -69,13 +69,15 @@ example_help_doc_patch() {
   #   Writes a patch summary to stdout. A stale base exits 2 with an error on stderr.
   #
   # Flags
-  #   --expect <sha256>      Required SHA-256 of the exact bytes read with doc get
+  #   --expect <revision>    Required revision from doc get --with-revision
   #   --preserve-row-order   Keep CSV row order even when the first header is id or name
   #   --json                 Emit updated document metadata as JSON
   #   -h, --help             Show this help
   #
   # Example
-  #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$base_sha256" < changes.diff
+  #   gh corkboard --as agent:specs doc get "$doc_id" --with-revision > base.json
+  #   revision=$(jq -er '.revision' base.json)
+  #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$revision" < changes.diff
 }
 
 # Search help
