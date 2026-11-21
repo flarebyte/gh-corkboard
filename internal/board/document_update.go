@@ -61,7 +61,10 @@ func (o UpdateOptions) validate(format string) error {
 	case o.ReviewComment != nil && !validReviewComment(*o.ReviewComment):
 		return errors.New("--review-comment must contain nonblank display text of at most 2000 characters")
 	}
-	return validateRevision(o.Expect)
+	if o.Expect != nil {
+		return ValidateRevision(*o.Expect)
+	}
+	return nil
 }
 
 func validReviewComment(comment string) bool {
@@ -69,8 +72,8 @@ func validReviewComment(comment string) bool {
 		utf8.RuneCountInString(comment) <= 2000 && displayText(comment, true)
 }
 
-func validateRevision(expected *string) error {
-	if expected != nil && !revisionToken.MatchString(*expected) {
+func ValidateRevision(expected string) error {
+	if !revisionToken.MatchString(expected) {
 		return errors.New("--expect must be a 64-character lowercase hexadecimal revision from doc get --with-revision")
 	}
 	return nil
@@ -102,21 +105,11 @@ func (d *Documents) Update(id string, o UpdateOptions) (UpdateResult, error) {
 		return result, errors.New("scope status permission required")
 	}
 
-	scope, err := d.scopeRoot(doc.Scope)
-	if os.IsNotExist(err) {
-		return result, documentUnavailable
-	}
+	scope, current, err := d.openUpdateSource(doc, o.Expect, o.Content != nil)
 	if err != nil {
 		return result, err
 	}
 	defer scope.Close()
-	current, err := currentDocument(scope, doc, o.Content != nil || o.Expect != nil)
-	if err != nil {
-		return result, err
-	}
-	if err := checkRevision(o.Expect, current); err != nil {
-		return result, err
-	}
 
 	if err := d.applyUpdate(&doc, o); err != nil {
 		return result, err
@@ -129,14 +122,7 @@ func (d *Documents) Update(id string, o UpdateOptions) (UpdateResult, error) {
 		}
 		formattingChanged := !bytes.Equal(*o.Content, formatted)
 		result.FormattingChanged = &formattingChanged
-		digest := revision(formatted)
-		if o.Status == nil && doc.Status == "archived" && (digest != doc.Digest || !bytes.Equal(current, formatted)) {
-			doc.Status = "draft"
-		}
-		doc.Digest = digest
-		if !bytes.Equal(current, formatted) {
-			replacement = &formatted
-		}
+		replacement = doc.trackReplacement(current, formatted, o.Status != nil)
 	}
 	if err := d.commitUpdate(scope, index, doc, replacement); err != nil {
 		return UpdateResult{}, err
@@ -187,6 +173,38 @@ func (d *Documents) applyUpdate(doc *document, o UpdateOptions) error {
 			entry.Locator = *o.ReviewLocator
 		}
 		doc.Reviews[d.access.actor] = entry
+	}
+	return nil
+}
+
+func (d *Documents) openUpdateSource(doc document, expected *string, readBytes bool) (*os.Root, []byte, error) {
+	scope, err := d.scopeRoot(doc.Scope)
+	if os.IsNotExist(err) {
+		return nil, nil, documentUnavailable
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	current, err := currentDocument(scope, doc, readBytes || expected != nil)
+	if err == nil {
+		err = checkRevision(expected, current)
+	}
+	if err != nil {
+		scope.Close()
+		return nil, nil, err
+	}
+	return scope, current, nil
+}
+
+func (doc *document) trackReplacement(current, formatted []byte, explicitStatus bool) *[]byte {
+	changed := !bytes.Equal(current, formatted)
+	digest := revision(formatted)
+	if !explicitStatus && doc.Status == "archived" && (digest != doc.Digest || changed) {
+		doc.Status = "draft"
+	}
+	doc.Digest = digest
+	if changed {
+		return &formatted
 	}
 	return nil
 }

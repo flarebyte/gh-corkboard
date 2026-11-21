@@ -69,6 +69,10 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 				code = "revision_mismatch"
 				message = "Document changed since it was read. Get the current content and revision before retrying."
 			}
+			if errors.Is(err, docformat.ErrPatchContext) {
+				code = "patch_context_mismatch"
+				message = "Patch hunk does not match the current content and position. Get the current content and revision before retrying."
+			}
 			_ = json.NewEncoder(stderr).Encode(map[string]string{"code": code, "message": message})
 		} else {
 			if helpTarget != nil {

@@ -43,19 +43,31 @@ func Format(format string, input []byte, preserveRowOrder bool) ([]byte, error) 
 		}
 		return formatCSV(table, preserveRowOrder), nil
 	default:
-		value, err := strictjson.Decode(input, 10000)
+		value, err := parseJSON(input)
 		if err != nil {
-			return nil, &InputError{format, err}
-		}
-		var output bytes.Buffer
-		enc := json.NewEncoder(&output)
-		enc.SetEscapeHTML(false)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(value); err != nil {
 			return nil, err
 		}
-		return output.Bytes(), nil
+		return encodeJSON(value)
 	}
+}
+
+func parseJSON(input []byte) (any, error) {
+	value, err := strictjson.Decode(input, 10000)
+	if err != nil {
+		return nil, &InputError{"json", err}
+	}
+	return value, nil
+}
+
+func encodeJSON(value any) ([]byte, error) {
+	var output bytes.Buffer
+	enc := json.NewEncoder(&output)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(value); err != nil {
+		return nil, err
+	}
+	return output.Bytes(), nil
 }
 
 func markdown(input []byte) []byte {
