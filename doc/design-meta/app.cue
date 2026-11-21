@@ -44,7 +44,7 @@ reports: [{
 			]
 		}, {
 			title: "Index and lifecycle"
-			notes: ["board.index", "board.index.example", "board.lifecycle"]
+			notes: ["board.index", "board.index.path-resolution", "board.index.example", "board.lifecycle"]
 		}, {
 			title: "Retention"
 			notes: ["board.retention"]

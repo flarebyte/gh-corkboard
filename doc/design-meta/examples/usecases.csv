@@ -2,6 +2,6 @@ id,actor,workflow,outcome,concept
 handoff,Specification agent,Publish a handoff in a shared topic with a link to the spec UUID,The implementation agent reads the handoff and follows the link if it can read the spec,board.communication
 self-note,Any agent,Write under its own agent scope,The agent can recover local context in a later session,board.communication
 skill-reference,Skill principal,Ask a board admin to grant read access to selected agents,The agents can find guidance by scope or description,board.access
-review,Specification and test agents,Record separate review comments and update the shared status,Readers can see each reviewer's current comment by principal ID,board.index
+review,Specification and test agents,Record separate review outcomes and link to supporting documents by UUID,Readers can see the comments and open linked documents where they have read access,board.index
 draft,Document author,Save an incomplete schema-bound document and run validation,The document remains editable and the validator reports actionable diagnostics,board.validation
 retire,Board administrator,Preview archived documents then save a ZIP snapshot before applying cleanup,The selected files are removed and the prior board can be inspected offline,board.retention

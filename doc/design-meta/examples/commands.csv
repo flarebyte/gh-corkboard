@@ -16,7 +16,8 @@ command,access,contract,concept
 `schema delete <format> <schema-id>`,Admin,Delete an unused schema,board.validation
 `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>]`,Scope write plus status when supplied,Read bytes from stdin and return the new document UUID,board.documents
 `doc get <doc-id>`,Scope read,Write stored document bytes to stdout,board.documents
-`doc update <doc-id> [--stdin] [--description <text>] [--status <status>] [--review-comment <text>|--clear-review-comment]`,Scope write for content or description and scope status for lifecycle or own review comment,Apply the supplied changes to the document and index,board.documents
+`doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]`,Scope read,Return the UUID for one exact logical document name,board.documents
+`doc update <doc-id> [--stdin] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass|warning|fail> [--review-locator <doc-id>]|--clear-review-comment]`,Scope write for content or description and scope status for lifecycle or own review,Apply the supplied changes to the document and index,board.documents
 `doc delete <doc-id>`,Topic delete or board admin,Delete one document and remove its index entry while retaining the folder,board.documents
 `doc validate <doc-id|--all>`,Scope read,Validate the selected document or all readable indexed documents,board.validation
 `index search [--in <scope>] [--status <status>] [--query <text>]`,Registered principal,Search metadata of readable documents and return logical identifiers,board.index

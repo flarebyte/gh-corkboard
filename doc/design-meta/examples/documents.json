@@ -2,6 +2,17 @@
   "version": 1,
   "documents": [
     {
+      "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
+      "scope": "agent:test",
+      "name": "pagination-review",
+      "format": "md",
+      "path": "agents/test/pagination-review.md",
+      "description": "Test review of the cursor pagination spec",
+      "status": "draft",
+      "reviewComments": {},
+      "sha256": "20af3722d897cdf3dcbdba27702361b45e6776517925456763adf2e68767e26d"
+    },
+    {
       "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
       "scope": "topic:specs",
       "name": "pagination",
@@ -10,8 +21,15 @@
       "description": "Requirements for cursor pagination",
       "status": "approved",
       "reviewComments": {
-        "agent:specs": "Acceptance criteria cover the edge cases.",
-        "agent:test": "The test plan covers every criterion."
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
       },
       "sha256": "bf706ffa8256beee042e4d36fd262ed2afed5c0408962814edcaddc83be4f44a"
     }

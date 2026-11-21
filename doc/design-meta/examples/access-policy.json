@@ -8,6 +8,7 @@
   ],
   "topics": ["specs"],
   "grants": [
+    {"scope": "agent:test", "principal": "agent:implementation", "permissions": ["read"]},
     {"scope": "topic:specs", "principal": "agent:specs", "permissions": ["write", "status"]},
     {"scope": "topic:specs", "principal": "agent:implementation", "permissions": ["read"]},
     {"scope": "topic:specs", "principal": "agent:test", "permissions": ["status"]}

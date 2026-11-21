@@ -13,6 +13,7 @@ type PrincipalId = `${"human" | "agent" | "skill"}:${string}`;
 type Scope = `${"agent" | "skill" | "topic"}:${string}`;
 type Permission = "read" | "write" | "delete" | "status";
 type DocumentId = string; // Canonical lowercase UUIDv4
+type ReviewStatus = "pass" | "warning" | "fail";
 
 interface AccessPolicy {
   version: 1;
@@ -32,6 +33,12 @@ interface ScopeGrant {
   permissions: Permission[];
 }
 
+interface ReviewComment {
+  comment: string;
+  status: ReviewStatus;
+  locator?: DocumentId;
+}
+
 interface DocumentMetadata {
   id: DocumentId;
   scope: Scope;
@@ -40,7 +47,7 @@ interface DocumentMetadata {
   schemaId?: string;
   description: string;
   status: Status;
-  reviewComments: Partial<Record<PrincipalId, string>>;
+  reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
 }
 
 interface Index {

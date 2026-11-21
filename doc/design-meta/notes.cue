@@ -9,7 +9,7 @@ _proseNotes: [
 
 			The policy is plaintext JSON validated against a built-in version-1 schema. Each principal entry has an ID and an optional role. After schema validation, the CLI resolves an omitted `role` to `member`. An explicit role must be valid and non-null. Check unique principal and topic IDs, one grant per scope and principal with a nonempty set of distinct permissions, registered grant subjects and scopes, and at least one administrator after applying defaults. Only a human can hold `admin`.
 
-			`read` allows discovery, retrieval, and validation. `write` allows creating documents and changing their content or description. A topic `delete` grant allows deleting individual documents in that topic. `status` allows setting any lifecycle status and setting or clearing the caller's own review comment. Each of `write`, `delete`, and `status` implies `read` and can be granted independently where the scope permits it. Board admins have all four permissions in every scope and run board-wide prune. Only a board admin can delete a document from an agent or skill channel.
+			`read` allows discovery, retrieval, and validation. `write` allows creating documents and changing their content or description. A topic `delete` grant allows deleting individual documents in that topic. `status` allows setting any lifecycle status and setting or clearing the caller's own review. Each of `write`, `delete`, and `status` implies `read` and can be granted independently where the scope permits it. Board admins have all four permissions in every scope and run board-wide prune. Only a board admin can delete a document from an agent or skill channel.
 
 			Folder removal requires the board `admin` role. `doc delete` retains the folder even when deleting its last document. `access topic delete` removes the topic folder and its grants only when the folder is empty and the scope has no remaining index entries.
 
@@ -57,7 +57,7 @@ _proseNotes: [
 
 			The basename is `<name>.<format>` or `<name>.<schema-id>.<format>`. A named schema resolves by both format and ID, such as `schemas/md/features.schema.json` for `pagination.features.md`. A missing named schema is a validation error.
 
-			Create returns a random UUIDv4. Use that ID to get, modify, delete, validate, or reference a document. The UUID is an opaque locator. Authorization comes from the current principal and scope policy. IDs stay stable through content and metadata updates. For a handoff, post in a shared topic and include the referenced document's UUID. The recipient needs read access to both the handoff and any referenced document. Self-notes go in the writer's own scope. [UUIDv4 specification](https://www.rfc-editor.org/rfc/rfc9562.html#name-uuid-version-4)
+			Every indexed document has a UUIDv4 locator, including documents adopted by resync. Use that ID to get, modify, delete, validate, or reference a document. Create and index search return the locator as the document's ID. `doc locate` resolves an exact scope, name, format, and optional schema ID to the same UUID. Omitting the schema matches a schemaless document. The command checks read access and file presence and uses the same unavailable error for missing and inaccessible documents. It prints the UUID on its own line or an object with an `id` field with `--json`. IDs stay stable through content and metadata updates. Authorization comes from the current principal and scope policy. For a handoff, post in a shared topic and include the referenced document's UUID. The recipient needs read access to both the handoff and the referenced document. Self-notes go in the writer's own scope. [UUIDv4 specification](https://www.rfc-editor.org/rfc/rfc9562.html#name-uuid-version-4)
 			"""#
 	},
 	{
@@ -78,17 +78,20 @@ _proseNotes: [
 			gh corkboard --as human:owner access grant topic:specs --to agent:specs --permission status
 			gh corkboard --as human:owner access grant topic:specs --to agent:implementation --permission read
 			gh corkboard --as human:owner access grant topic:specs --to agent:test --permission status
+			gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
 			gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md --description "Requirements for cursor pagination" --status active --json < pagination.md
-			gh corkboard --as agent:implementation index search --in topic:specs --status active --json
-			# Use the document UUID returned by search.
+			doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
 			gh corkboard --as agent:implementation doc get "$doc_id"
-			gh corkboard --as agent:specs doc update "$doc_id" --status review --review-comment "Acceptance criteria cover the edge cases."
-			gh corkboard --as agent:test doc update "$doc_id" --status approved --review-comment "The test plan covers every criterion."
+			gh corkboard --as agent:specs doc update "$doc_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
+			gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
+			review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
+			gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
 			gh corkboard --as agent:implementation index search --in topic:specs --status approved --json
+			gh corkboard --as agent:implementation doc get "$review_id"
 			gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
 			```
 
-			Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own comment, and a combined update fails before any changes if the caller lacks a required permission. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Also exercise read filtering, malformed policy and index data, symlink rejection, invalid drafts, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+			Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Also exercise read filtering, malformed policy and index data, symlink rejection, invalid drafts, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
 			"""#
 	},
 	{
@@ -114,11 +117,28 @@ _proseNotes: [
 
 			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. The query is a case-insensitive substring of the name or description. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk. New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. When CLI or external content changes, a prior `archived` status reverts to `draft` unless the CLI update explicitly sets a status for the new bytes.
 
-			`reviewComments` sits alongside `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current comment per author. The CLI takes the author from the resolved caller identity. `doc update --review-comment <text>` inserts or replaces a nonempty comment under that identity. `--clear-review-comment` removes only that identity's comment and can be repeated safely. Use one comment flag at a time. Both flags require `status` and may be used independently of a status change. Existing comments remain attributed to their authors after grant revocation.
+			`reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonempty `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
+
+			`doc update --review-comment <text> --review-status <status>` inserts or replaces the caller's review. Supply `--review-locator <doc-id>` to include a link in that review. `--clear-review-comment` removes the caller's entire review and can be repeated safely. A review replacement and a clear are mutually exclusive. Both require the `status` permission and can be used independently of a lifecycle change. Author attribution comes from the resolved caller and is retained after grant revocation.
+
+			A review can link to any existing indexed document on the board that the reviewer can read. When returning review metadata, the CLI includes the locator only if the target is available to the reader. If the target is later deleted or the reader loses access, the index retains the stored locator and the CLI still returns the review text and outcome.
 
 			Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported entries. `index resync` adopts files only in registered managed scopes and assigns new UUIDs, draft status, and empty review comments. It preserves UUIDs, descriptions, and comments at surviving paths and preserves status except when bytes change for an archived document. It drops records for missing files and reports those removals and status resets. External renames appear as a missing path and a new file. Resync can rebuild a missing catalog with new IDs. It refuses to overwrite a malformed or unsupported index so its metadata remains recoverable. Use `doc validate --all` to check content in readable indexed documents.
 
 			All CLI operations affecting the board use an OS-backed lock released on process exit. Mutations take an exclusive lock. Reads hold a compatible lock from authorization through IO so an ACL change cannot interleave with a CLI read. Keep lock bookkeeping under `index/` and write replacements atomically at the individual-file level. Write document bytes before the corresponding index entry, and report partial success if the index write fails. Audit and resync recover file/catalog consistency after interrupted updates. Direct editors can create drift and must finish writes before a snapshot or destructive command.
+			"""#
+	},
+	{
+		name:  "board.index.path-resolution"
+		title: "Internal locator and path resolution"
+		markdown: #"""
+			The validated document index is the source of the mapping in both directions. Use its unique UUID and canonical board-relative path as lookup keys. A UUID is assigned at creation or resync adoption and carries no path information. Perform lookups against the current index under the board lock.
+
+			**Locator to path.** Look up the UUID in the index, check the caller's permission for the requested operation on the entry's scope, then use the entry's validated path for root-confined filesystem access. Index validation has already checked that the path exactly matches the path derived from the entry's scope, name, format, and optional schema ID. Return the standard unavailable error for a missing or inaccessible document.
+
+			**Path to locator.** Use a canonical path derived from validated logical fields or discovered under the board root during audit or resync. Check that it fits a registered scope and the managed filename rules, then look up that exact path in the index and use the entry's UUID. A path without an entry has no locator yet. Audit reports it as unindexed, and resync can adopt it and assign a new UUID.
+
+			In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6f` with `agents/test/pagination-review.md`. Both conversions are internal storage functions. The public `doc locate` command takes logical fields and returns the UUID. It derives the canonical path and performs the reverse lookup internally, with read authorization and a file-presence check.
 			"""#
 	},
 	{
