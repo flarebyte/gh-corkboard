@@ -2,6 +2,81 @@
 
 # Each function is an independent example. Call a function explicitly to run it.
 
+# help
+example_help() {
+  gh corkboard help
+  # Expected stdout
+  # Manage a local project corkboard for agent handoffs and human review.
+  #
+  # Usage
+  #   gh corkboard --as <principal> <command> [flags]
+  #   gh corkboard help [<command> ...]
+  #
+  # Commands
+  #   init       Initialize the local board
+  #   access     Manage principals, topics, and grants
+  #   schema     Manage document schemas
+  #   doc        Create, read, edit, delete, and validate documents
+  #   index      Search, reconcile, and prune the document index
+  #   snapshot   Create a ZIP archive of the board
+  #   help       Show root or command-specific help
+  #
+  # Global flags
+  #   --as <principal>   Select the caller for a board command
+  #   --json             Emit JSON for supported results
+  #   -h, --help          Show help for the selected command
+  #   --version          Show the CLI version
+  #
+  # Examples
+  #   gh corkboard --as human:owner init
+  #   gh corkboard help doc
+  #   gh corkboard help access principal add
+}
+
+# Command group help
+example_help_doc() {
+  gh corkboard help doc
+  # Expected stdout
+  # Usage
+  #   gh corkboard --as <principal> doc <command> [flags]
+  #
+  # Commands
+  #   create    Create a document from stdin
+  #   get       Write the stored bytes to stdout
+  #   locate    Resolve a logical document name to a UUID
+  #   patch     Apply a patch against an exact base revision
+  #   update    Replace content or update metadata
+  #   delete    Remove one document
+  #   validate  Check a document or all readable indexed documents
+  #
+  # Run gh corkboard help doc <command> for details.
+}
+
+# Leaf command help
+example_help_doc_patch() {
+  gh corkboard help doc patch
+  # Expected stdout
+  # Apply a patch from stdin to an existing document. Requires write access.
+  #
+  # Usage
+  #   gh corkboard --as <principal> doc patch <doc-id> --expect <sha256> [flags]
+  #
+  # Input
+  #   Markdown and CSV use a unified diff. JSON uses RFC 7396 Merge Patch.
+  #
+  # Output
+  #   Writes a patch summary to stdout. A stale base exits 2 with an error on stderr.
+  #
+  # Flags
+  #   --expect <sha256>      Required SHA-256 of the exact bytes read with doc get
+  #   --preserve-row-order   Keep CSV row order even when the first header is id or name
+  #   --json                 Emit updated document metadata as JSON
+  #   -h, --help             Show this help
+  #
+  # Example
+  #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$base_sha256" < changes.diff
+}
+
 # init
 example_init() {
   gh corkboard --as human:owner init

@@ -114,6 +114,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 
 | access | command | concept | contract |
 | --- | --- | --- | --- |
+| Public | `help [<command> ...]` | board.cli | Show top-level or command-specific help without opening a board |
 | Human bootstrap or existing admin | `init` | board.cli | Initialize the worktree board and ensure a root ignore rule |
 | Registered principal | `access whoami` | board.access | Return the selected principal and its effective permissions by scope |
 | Admin | `access principal add <principal> [--role <member\|admin>]` | board.access | Register a principal and provision its folder for an agent or skill |
@@ -144,7 +145,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 
 #### Command conventions
 
-Commands in the table follow `gh corkboard --as <principal>`. They address board resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
+Board commands in the table follow `gh corkboard --as <principal>`. Run help directly with `gh corkboard help`. Board commands address resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
 Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document or patch content. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
 
@@ -179,6 +180,16 @@ gh corkboard --as agent:implementation doc create --in agent:implementation --na
 ```
 
 Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Verify formatting on both content write commands, CSV order preservation when requested, and unchanged file and index state when syntax is invalid. Verify that milestone and concept filters combine with other filters after read authorization and that clearing either value leaves the other intact. Also exercise malformed policy and index data, symlink rejection, well-formed drafts that fail schema validation, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+
+### Help and discovery
+
+#### Help for the CLI and its subcommands
+
+`gh corkboard help` shows the root usage, global flags, command groups, and examples for initializing a board and discovering commands. Running `gh corkboard` with no arguments, `gh corkboard --help`, or `gh corkboard -h` shows the same help.
+
+Use `gh corkboard help <command> ...` or append `--help` or `-h` to a command path. Group help lists immediate subcommands with short descriptions. Leaf help includes its usage syntax, required arguments and permissions, available flags and defaults, stdin and stdout behavior, and a representative invocation. Commands with format-specific behavior explain which formats and options apply.
+
+Render help from the same command definitions used for argument parsing. Help works outside a Git worktree without a board, principal, or stdin. It writes plain text to stdout and exits 0. An unknown command path exits 2, sends the error and the closest valid help invocation to stderr, and leaves stdout empty.
 
 ## Specification sources
 

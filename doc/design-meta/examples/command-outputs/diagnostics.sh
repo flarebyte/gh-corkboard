@@ -2,6 +2,15 @@
 
 # Each function is an independent example. Call a function explicitly to run it.
 
+# Unknown help target
+# Exits 2 with empty stdout.
+example_unknown_help_target() {
+  gh corkboard help doc open
+  # Expected stderr
+  # error: unknown command "open" under "doc"
+  # Run gh corkboard help doc to list document commands.
+}
+
 # Schema validation finding
 # A schema violation exits 1. The diagnostic report goes to stdout in both text and JSON modes.
 example_schema_validation_finding() {

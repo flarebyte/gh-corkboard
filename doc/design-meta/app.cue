@@ -30,6 +30,9 @@ reports: [{
 		sections: [{
 			title: "Commands"
 			notes: ["board.commands", "board.interface"]
+		}, {
+			title: "Help and discovery"
+			notes: ["board.cli.help"]
 		}]
 	}, {
 		title: "Storage and validation"

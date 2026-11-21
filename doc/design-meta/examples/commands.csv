@@ -1,4 +1,5 @@
 command,access,contract,concept
+`help [<command> ...]`,Public,Show top-level or command-specific help without opening a board,board.cli
 `init`,Human bootstrap or existing admin,Initialize the worktree board and ensure a root ignore rule,board.cli
 `access whoami`,Registered principal,Return the selected principal and its effective permissions by scope,board.access
 `access principal add <principal> [--role <member|admin>]`,Admin,Register a principal and provision its folder for an agent or skill,board.access
