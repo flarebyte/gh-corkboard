@@ -1,0 +1,10 @@
+status,meaning
+draft,Work in progress or newly discovered file
+active,Current handoff note or reference
+blocked,Work is waiting on a dependency or decision
+review,Ready for human or agent review
+approved,Accepted in review
+rejected,Declined in review
+resolved,Handoff or action completed
+obsolete,Temporarily retained for existing references and discouraged for new use
+archived,Ready for administrator prune while the content is unchanged

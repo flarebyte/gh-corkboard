@@ -1,0 +1,109 @@
+{
+  "jsonStdout": {
+    "init": {
+      "initialized": true,
+      "ignoreRuleAdded": false
+    },
+    "access whoami": {
+      "principal": "agent:implementation",
+      "role": "member",
+      "scopes": [
+        {
+          "scope": "agent:implementation",
+          "permissions": [
+            "read",
+            "write",
+            "status"
+          ]
+        },
+        {
+          "scope": "agent:test",
+          "permissions": [
+            "read"
+          ]
+        },
+        {
+          "scope": "topic:specs",
+          "permissions": [
+            "read"
+          ]
+        }
+      ]
+    },
+    "access principal add": {
+      "principal": "agent:test",
+      "role": "member"
+    },
+    "access principal list": {
+      "principals": [
+        {
+          "id": "agent:implementation",
+          "role": "member"
+        },
+        {
+          "id": "agent:specs",
+          "role": "member"
+        },
+        {
+          "id": "agent:test",
+          "role": "member"
+        },
+        {
+          "id": "human:owner",
+          "role": "admin"
+        }
+      ]
+    },
+    "access principal set": {
+      "principal": "human:reviewer",
+      "role": "admin",
+      "changed": true
+    },
+    "access topic create": {
+      "scope": "topic:scratch",
+      "created": true
+    },
+    "access topic delete": {
+      "scope": "topic:scratch",
+      "deleted": true
+    },
+    "access list": {
+      "grants": [
+        {
+          "scope": "topic:specs",
+          "principal": "agent:implementation",
+          "permissions": [
+            "read"
+          ]
+        },
+        {
+          "scope": "topic:specs",
+          "principal": "agent:specs",
+          "permissions": [
+            "write",
+            "status"
+          ]
+        },
+        {
+          "scope": "topic:specs",
+          "principal": "agent:test",
+          "permissions": [
+            "status"
+          ]
+        }
+      ]
+    },
+    "access grant": {
+      "scope": "topic:specs",
+      "principal": "agent:implementation",
+      "permission": "status",
+      "changed": true
+    },
+    "access revoke": {
+      "scope": "topic:specs",
+      "principal": "agent:implementation",
+      "permission": "status",
+      "changed": true
+    }
+  }
+}

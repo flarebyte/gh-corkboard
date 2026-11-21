@@ -1,0 +1,3 @@
+scope,default access,grants available to admins
+`agent:<id>` and `skill:<id>`,The matching registered principal has read and write access to its scope. Document deletion requires a board admin.,"`read` for other principals and `status` for any principal."
+`topic:<id>`,Document access requires a document grant or the `admin` role.,"`read`, `write`, `delete`, and `status`."

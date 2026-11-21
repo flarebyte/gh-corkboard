@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "id": "53dd1654-7fab-459f-a414-dc91198c0c61",
+      "scope": "agent:implementation",
+      "name": "pagination-implementation",
+      "format": "md",
+      "path": "agents/implementation/53dd1654-7fab-459f-a414-dc91198c0c61--pagination-implementation.md",
+      "description": "Implement the next cursor",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Implementation",
+      "assignee": "agent:implementation",
+      "status": "active",
+      "reviewComments": {},
+      "sha256": "7a3d1a0429e5530a946dbd5713924cdf046433b2b9809725e66431ddc4c9e18f"
+    },
+    {
+      "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
+      "scope": "agent:test",
+      "name": "pagination-review",
+      "format": "md",
+      "path": "agents/test/b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md",
+      "description": "Test review of the cursor pagination spec",
+      "status": "draft",
+      "reviewComments": {},
+      "sha256": "20af3722d897cdf3dcbdba27702361b45e6776517925456763adf2e68767e26d"
+    },
+    {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "path": "topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md",
+      "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
+      "assignee": "agent:specs",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
+      },
+      "sha256": "bf706ffa8256beee042e4d36fd262ed2afed5c0408962814edcaddc83be4f44a"
+    },
+    {
+      "id": "cf89eab1-3451-4e41-a6bb-0c6110a9d934",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "path": "topics/specs/cf89eab1-3451-4e41-a6bb-0c6110a9d934--pagination.md",
+      "description": "Cursor pagination requirements for the v2 API",
+      "milestone": "v2/Specs",
+      "concept": "Cursor/Pagination",
+      "status": "approved",
+      "reviewComments": {},
+      "sha256": "4ce5fb589b68ce9c3c8812d1b222e24ca3cb5926d5176425a8b7af3ae0c8b736"
+    }
+  ]
+}

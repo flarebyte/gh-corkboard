@@ -1,0 +1,16 @@
+id,description,parent
+board,Local project corkboard,
+board.access,Principals and scope permissions,board
+board.cli,Go extension command interface,board
+board.communication,Agent handoffs self-notes and human review,board
+board.dependencies,Go dependency choices and advisory evidence,board
+board.documents,Document formats names and lifecycle,board
+board.formatting,Automatic formatting on document writes,board
+board.index,Metadata search and filesystem reconciliation,board
+board.patching,Revision checked document patches,board
+board.retention,Obsolete documents and snapshots,board
+board.supervision,Reported work and human oversight within a milestone,board
+board.validation,Schema registry and validation profiles,board
+board.validation.internal,Strict validation of the index and access policy,board.validation
+board.validation.internal.access,Principal topic and grant field validation,board.validation.internal
+board.validation.internal.index,Document index field validation,board.validation.internal

@@ -1,0 +1,29 @@
+command,access,contract,concept
+`help [<command> ...]`,Public,Show top-level or command-specific help without opening a board,board.cli
+`init`,Human bootstrap or existing admin,Publish a complete worktree board after verifying the root ignore rule. Authorized retries preserve board data.,board.cli
+`access whoami`,Registered principal,Return the selected principal and its effective permissions by scope,board.access
+`access principal add <principal> [--role <member|admin>]`,Admin,Register a principal and provision its folder for an agent or skill,board.access
+`access principal list`,Admin,List registered principals and their roles,board.access
+`access principal set <principal> --role <member|admin>`,Admin,Change a principal's role while retaining existing documents and grants,board.access
+`access topic create <topic-id>`,Admin,Register a topic with no grants,board.access
+`access topic delete <topic-id>`,Admin,Remove an empty topic folder with no remaining index entries and remove its grants,board.access
+`access list [--scope <scope>]`,Admin or private scope owner,Show grants the caller is authorized to inspect,board.access
+`access grant <scope> --to <principal> --permission <read|write|delete|status>`,Admin,Add one explicit permission allowed for the scope,board.access
+`access revoke <scope> --from <principal> --permission <read|write|delete|status>`,Admin,Remove one explicit permission allowed for the scope,board.access
+`schema create <format> <schema-id>`,Admin,Register a valid schema from stdin,board.validation
+`schema get <format> <schema-id>`,Registered principal,Write stored schema bytes to stdout,board.validation
+`schema list [--format <format>]`,Registered principal,List registered schemas ordered by format and ID,board.validation
+`schema update <format> <schema-id>`,Admin,Replace an existing schema with a valid definition from stdin,board.validation
+`schema delete <format> <schema-id>`,Admin,Delete an unused schema,board.validation
+`doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--preserve-row-order]`,Scope write plus status when supplied,Create a unique name within the selected scope and milestone and return its UUID,board.formatting
+`doc get <doc-id> [--with-revision]`,Scope read,Write stored bytes or return content and its revision together as JSON,board.documents
+`doc locate --in <scope> --name <name> [--milestone <text>]`,Scope read,Resolve an exact name within a scope and require the milestone when the name is ambiguous,board.documents
+`doc search [--in <scope>] [--status <status>]... [--assignee <principal>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table|csv|json>]`,Registered principal,Filter accessible documents by scope and metadata with board-wide access for admins,board.documents
+`doc patch <doc-id> --expect <revision> [--preserve-row-order]`,Scope write,Apply a patch from stdin to the exact base revision and format the result,board.patching
+`doc update <doc-id> [--expect <revision>] [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--assignee <principal>] [--status <status>] [--review-comment <text> --review-status <pass|warning|fail> [--review-locator <doc-id>]|--clear-review-comment]`,"Scope write for content, description, milestone, concept, or assignee. Scope status for lifecycle or own review.",Apply requested content or metadata updates and report any formatting changes to replacement bytes,board.formatting
+`doc delete <doc-id>`,Topic delete or board admin,Delete one document and remove its index entry while retaining the folder,board.documents
+`doc validate <doc-id|--all>`,Scope read,Validate the selected document or all readable indexed documents,board.validation
+`index audit`,Admin,Report filesystem and index discrepancies without changing board data,board.index
+`index resync`,Admin,Reconcile the catalog with managed locations and preserve metadata and filename UUIDs,board.index
+`index prune [--apply --expect <plan-id>]`,Admin,Preview or apply removal of archived documents,board.retention
+`snapshot create [--expect <plan-id>]`,Admin,Write a ZIP of the board to stdout and optionally verify a prune plan first,board.retention
