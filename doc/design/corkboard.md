@@ -137,7 +137,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 | Scope write for content, description, milestone or concept. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
-| Registered principal | `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>]` | board.index | Search metadata of readable documents and return logical identifiers |
+| Registered principal | `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>]` | board.index | Search readable metadata with exact or trailing-asterisk prefix filters for milestone and concept |
 | Admin | `index audit` | board.index | Report filesystem and index discrepancies without changing board data |
 | Admin | `index resync` | board.index | Reconcile the catalog with valid managed locations and preserve surviving metadata |
 | Admin | `index prune [--apply --expect <plan-id>]` | board.retention | Preview or apply removal of archived documents |
@@ -165,7 +165,7 @@ gh corkboard --as human:owner access grant topic:specs --to agent:implementation
 gh corkboard --as human:owner access grant topic:specs --to agent:test --permission status
 gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
 gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
-  --description "Requirements for cursor pagination" --milestone "v1 launch" --concept "cursor pagination" \
+  --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
   --status active --json < pagination.md
 doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
 gh corkboard --as agent:implementation doc get "$doc_id"
@@ -174,7 +174,7 @@ gh corkboard --as agent:test doc create --in agent:test --name pagination-review
 review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
 gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
 gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-  --milestone "v1 launch" --concept "cursor pagination" --json
+  --milestone "v1 launch/specs" --concept cursor/pagination --json
 gh corkboard --as agent:implementation doc get "$review_id"
 gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
 ```
@@ -209,6 +209,9 @@ Render help from the same command definitions used for argument parsing. Help wo
 | Revision checked document patches | board.patching | board |
 | Obsolete documents and snapshots | board.retention | board |
 | Schema registry and validation profiles | board.validation | board |
+| Strict validation of the index and access policy | board.validation.internal | board.validation |
+| Principal topic and grant field validation | board.validation.internal.access | board.validation.internal |
+| Document index field validation | board.validation.internal.index | board.validation.internal |
 
 ## Storage and validation
 
@@ -256,13 +259,17 @@ In Go, evaluate `go-gitdiff` for parsing unified text and applying it in strict 
 
 `index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. A built-in schema validates structure, the UUID form, status, review comments, and digest. Go checks uniqueness of IDs and paths, that the scope and comment authors are registered, and that the stored path exactly matches the derived path. A malformed index blocks document selections and writes that would depend on it.
 
-`milestone` and `concept` are optional free-text strings on each index entry. Set them with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace and preserve the remaining text and case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
+`milestone` and `concept` are optional strings on each index entry. Writers choose their own values subject to the field rules. Use `/` to separate hierarchy segments. A concept has 1–48 characters total and each segment uses ASCII letters, as in `Cursor/Pagination`. A milestone has 1–64 characters total and allows digits, spaces, and version punctuation under the field rules, as in `v1 launch/Specs`. The length includes separators. Every segment must be nonempty. These labels are stored as metadata and have no effect on the derived document path.
 
-`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match the entire value case-insensitively after trimming the filter. A supplied filter requires a nonblank value and matches only entries with that field set. `--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
+Set these fields with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace from the whole flag value before checking it and preserve its case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
+
+`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
+
+`--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
 
 New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. When CLI or external content changes, a prior `archived` status reverts to `draft` unless the CLI update explicitly sets a status for the new bytes.
 
-`reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonempty `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
+`reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonblank `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
 
 `doc update --review-comment <text> --review-status <status>` inserts or replaces the caller's review. Supply `--review-locator <doc-id>` to include a link in that review. `--clear-review-comment` removes the caller's entire review and can be repeated safely. A review replacement and a clear are mutually exclusive. Both require the `status` permission and can be used independently of a lifecycle change. Author attribution comes from the resolved caller and is retained after grant revocation.
 
@@ -296,8 +303,8 @@ All CLI operations affecting the board use an OS-backed lock released on process
       "format": "md",
       "path": "topics/specs/pagination.md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -339,6 +346,51 @@ In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6
 | Handoff or action completed | resolved |
 | Temporarily retained for existing references and discouraged for new use | obsolete |
 | Ready for administrator prune while the content is unchanged | archived |
+
+### Internal JSON validation
+
+#### Validating the index and access policy
+
+Apply the field rules to the board-owned JSON files `index/documents.json` and `index/access.json`. Enforce the encoded size and nesting limits during parsing, reject duplicate member names before decoding into Go structs or maps, and validate the resulting objects with built-in JSON Schema Draft 2020-12. Run the Go checks for references, derived paths, unique IDs and grant pairs, and the required human administrator. [JSON Schema validation keywords](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-validation-keywords-for-str) · [Go JSON decoding behavior](https://pkg.go.dev/encoding/json#hdr-Security_Considerations)
+
+Validate the persisted access policy before trusting its grants and the persisted index before using its paths. Validate the prospective internal JSON before changing a document or replacing its metadata. Invalid metadata supplied via CLI flags exits 2 with a field-specific diagnostic and leaves files and index entries unchanged. Treat descriptive text and comments as data, escape control and layout characters when rendering them in terminal summaries, and keep stored paths confined to the board during filesystem access.
+
+#### Field validation rules
+
+| concept | document | field | presence | stage | type | validation |
+| --- | --- | --- | --- | --- | --- | --- |
+| board.validation.internal | both | $ | required | parser | object | Accept exactly one complete UTF-8 JSON object. Reject duplicate keys at every depth and trailing non-whitespace after the root. Reject unpaired Unicode surrogates in string escapes. Allow at most 8 object or array levels counting the root as level 1. |
+| board.validation.internal | both | every object | applies when present | schema | object | Reject unknown properties and null values. Only the reviewComments object uses dynamic keys and each key must be a canonical principal ID. |
+| board.validation.internal | both | slug | shared rule | schema and Go | string | 1–64 ASCII characters matching ^[a-z0-9][a-z0-9_-]{0,63}$ over the whole value. Reject platform-reserved names. |
+| board.validation.internal | both | display text | shared rule | Go | string | Reject Unicode control characters, bidi controls, U+2028, and U+2029. Multiline display text also allows LF and tabs. |
+| board.validation.internal.index | index/documents.json | $ | required | parser and writer | object | Limit to 32 MiB of encoded JSON including whitespace. |
+| board.validation.internal.index | index/documents.json | version | required | schema and Go | integer | JSON number 1. Reject unsupported versions. |
+| board.validation.internal.index | index/documents.json | documents | required | schema and Go | array of objects | Allow an empty list. Store entries in lexical path order. UUIDs and canonical paths are independently unique. |
+| board.validation.internal.index | index/documents.json | documents[].id | required | schema | string | Exactly 36 ASCII characters. Canonical lowercase UUIDv4 with the RFC variant. |
+| board.validation.internal.index | index/documents.json | documents[].scope | required | schema and Go | string | Prefix agent: or skill: or topic: followed by a slug. The scope must be registered in the access policy. |
+| board.validation.internal.index | index/documents.json | documents[].name | required | schema and Go | string | Slug. Reject platform-reserved names. |
+| board.validation.internal.index | index/documents.json | documents[].format | required | schema | string | One of json or csv or md. |
+| board.validation.internal.index | index/documents.json | documents[].schemaId | optional | schema and Go | string | Slug. Reject platform-reserved names. A missing schema is reported by document validation. |
+| board.validation.internal.index | index/documents.json | documents[].path | required | schema and Go | string | At most 206 ASCII characters. Must exactly equal the canonical board-relative path derived from scope and filename fields. Resolve filesystem access inside the board root and reject symlinks. |
+| board.validation.internal.index | index/documents.json | documents[].description | required | schema and Go | string | 0–500 Unicode code points. Single-line display text. |
+| board.validation.internal.index | index/documents.json | documents[].milestone | optional | schema and Go | string | 1–64 ASCII characters total including slash separators. Full-string pattern ^[A-Za-z0-9][A-Za-z0-9 ._-]*(/[A-Za-z0-9][A-Za-z0-9 ._-]*)*$. Reject trailing whitespace in each segment. |
+| board.validation.internal.index | index/documents.json | documents[].concept | optional | schema | string | 1–48 ASCII characters total including slash separators. Each segment contains only letters. Full-string pattern ^[A-Za-z]+(/[A-Za-z]+)*$. |
+| board.validation.internal.index | index/documents.json | documents[].status | required | schema | string | One of the lifecycle states in lifecycle.csv. |
+| board.validation.internal.index | index/documents.json | documents[].sha256 | required | schema and audit | string | Exactly 64 lowercase hexadecimal characters. Audit compares it to the digest of the stored bytes on disk. |
+| board.validation.internal.index | index/documents.json | documents[].reviewComments | required | schema and Go | object | Allow an empty object. Each key is a registered principal ID. Each value is one review object. |
+| board.validation.internal.index | index/documents.json | documents[].reviewComments.*.comment | required | schema and Go | string | 1–2000 Unicode code points. Must contain non-whitespace text. Multiline display text. |
+| board.validation.internal.index | index/documents.json | documents[].reviewComments.*.status | required | schema | string | One of pass or warning or fail. |
+| board.validation.internal.index | index/documents.json | documents[].reviewComments.*.locator | optional | schema and Go | string | Canonical lowercase UUIDv4 with the RFC variant. Check the target exists and is readable when assigning it. A stored reference can outlive its target. |
+| board.validation.internal.access | index/access.json | $ | required | parser and writer | object | Limit to 4 MiB of encoded JSON including whitespace. |
+| board.validation.internal.access | index/access.json | version | required | schema and Go | integer | JSON number 1. Reject unsupported versions. |
+| board.validation.internal.access | index/access.json | principals | required | schema and Go | array of objects | Require at least one human admin. Principal IDs must be unique. |
+| board.validation.internal.access | index/access.json | principals[].id | required | schema and Go | string | Prefix human: or agent: or skill: followed by a slug. Reject platform-reserved slug names. |
+| board.validation.internal.access | index/access.json | principals[].role | optional | schema and Go | string | Either member or admin. Omitted defaults to member. Only a human principal can have the admin role. |
+| board.validation.internal.access | index/access.json | topics | required | schema and Go | array of strings | Allow an empty list. Each topic is a unique slug. Reject platform-reserved names. |
+| board.validation.internal.access | index/access.json | grants | required | schema and Go | array of objects | Allow an empty list. Require at most one entry per scope and principal pair. |
+| board.validation.internal.access | index/access.json | grants[].scope | required | schema and Go | string | Prefix agent: or skill: or topic: followed by a slug. Must refer to an existing private owner or registered topic. |
+| board.validation.internal.access | index/access.json | grants[].principal | required | schema and Go | string | Canonical principal ID. Must refer to a registered principal. |
+| board.validation.internal.access | index/access.json | grants[].permissions | required | schema | array of strings | 1–4 distinct values. A topic allows read or write or status or delete. A private scope allows read or status. |
 
 ### Retention
 

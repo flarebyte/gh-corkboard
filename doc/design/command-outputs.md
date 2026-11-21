@@ -327,6 +327,14 @@ example_malformed_input_on_write() {
   # Invalid JSON: unexpected end of input.
 }
 
+# Invalid concept
+# Invalid metadata flags exit 2 and leave the document and index untouched.
+example_invalid_concept() {
+  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb +    --concept "cursor pagination"
+  # Expected stderr
+  # error: --concept must be 1–48 characters in slash-separated segments of ASCII letters.
+}
+
 # Unavailable document
 # A missing or inaccessible UUID exits 2. The error goes to stderr and stdout is empty.
 example_unavailable_document() {
@@ -411,8 +419,8 @@ example_stale_patch_base() {
 # doc create
 example_doc_create() {
   gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
-    --description "Requirements for cursor pagination" --milestone "v1 launch" \
-    --concept "cursor pagination" --status active < pagination.md
+    --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" \
+    --concept Cursor/Pagination --status active < pagination.md
   # Expected stdout
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
@@ -455,11 +463,11 @@ example_doc_update() {
 # doc update with milestone and concept
 example_doc_update_labels() {
   gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb \
-    --milestone "v1.1" --concept "pagination cursors"
+    --milestone "v1.1" --concept PaginationCursors
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb.
   # Milestone: v1.1
-  # Concept: pagination cursors
+  # Concept: PaginationCursors
 }
 
 # doc update with replacement content
@@ -547,8 +555,8 @@ example_doc_validate() {
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "active",
       "reviewComments": {}
     },
@@ -561,8 +569,8 @@ example_doc_validate() {
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -583,7 +591,7 @@ example_doc_validate() {
       "format": "md",
       "description": "Requirements for cursor pagination",
       "milestone": "v1.1",
-      "concept": "pagination cursors",
+      "concept": "PaginationCursors",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -614,8 +622,8 @@ example_doc_validate() {
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -688,12 +696,12 @@ example_doc_validate() {
 # index search
 example_index_search() {
   gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-    --milestone "v1 launch" --concept "cursor pagination"
+    --milestone 'v1 launch/*' --concept 'cursor/*'
   # Expected stdout
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  approved  topic:specs / pagination (md)
   #   Requirements for cursor pagination
-  #   Milestone: v1 launch
-  #   Concept: cursor pagination
+  #   Milestone: v1 launch/Specs
+  #   Concept: Cursor/Pagination
   #   agent:specs [pass] Acceptance criteria cover the edge cases.
   #   agent:test [pass] The test plan covers every criterion.
   #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
@@ -774,8 +782,8 @@ example_snapshot_create() {
           "name": "pagination",
           "format": "md",
           "description": "Requirements for cursor pagination",
-          "milestone": "v1 launch",
-          "concept": "cursor pagination",
+          "milestone": "v1 launch/Specs",
+          "concept": "Cursor/Pagination",
           "status": "approved",
           "reviewComments": {
             "agent:specs": {

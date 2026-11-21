@@ -5,8 +5,8 @@
 # doc create
 example_doc_create() {
   gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
-    --description "Requirements for cursor pagination" --milestone "v1 launch" \
-    --concept "cursor pagination" --status active < pagination.md
+    --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" \
+    --concept Cursor/Pagination --status active < pagination.md
   # Expected stdout
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
@@ -49,11 +49,11 @@ example_doc_update() {
 # doc update with milestone and concept
 example_doc_update_labels() {
   gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb \
-    --milestone "v1.1" --concept "pagination cursors"
+    --milestone "v1.1" --concept PaginationCursors
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb.
   # Milestone: v1.1
-  # Concept: pagination cursors
+  # Concept: PaginationCursors
 }
 
 # doc update with replacement content

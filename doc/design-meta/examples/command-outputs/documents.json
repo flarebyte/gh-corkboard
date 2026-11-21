@@ -6,8 +6,8 @@
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "active",
       "reviewComments": {}
     },
@@ -20,8 +20,8 @@
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -42,7 +42,7 @@
       "format": "md",
       "description": "Requirements for cursor pagination",
       "milestone": "v1.1",
-      "concept": "pagination cursors",
+      "concept": "PaginationCursors",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -73,8 +73,8 @@
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {

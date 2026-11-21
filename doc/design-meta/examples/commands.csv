@@ -22,7 +22,7 @@ command,access,contract,concept
 `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass|warning|fail> [--review-locator <doc-id>]|--clear-review-comment]`,"Scope write for content, description, milestone or concept. Scope status for lifecycle or own review.",Apply requested content or metadata updates and report any formatting changes to replacement bytes,board.formatting
 `doc delete <doc-id>`,Topic delete or board admin,Delete one document and remove its index entry while retaining the folder,board.documents
 `doc validate <doc-id|--all>`,Scope read,Validate the selected document or all readable indexed documents,board.validation
-`index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>]`,Registered principal,Search metadata of readable documents and return logical identifiers,board.index
+`index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>]`,Registered principal,Search readable metadata with exact or trailing-asterisk prefix filters for milestone and concept,board.index
 `index audit`,Admin,Report filesystem and index discrepancies without changing board data,board.index
 `index resync`,Admin,Reconcile the catalog with valid managed locations and preserve surviving metadata,board.index
 `index prune [--apply --expect <plan-id>]`,Admin,Preview or apply removal of archived documents,board.retention

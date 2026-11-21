@@ -84,7 +84,7 @@ _proseNotes: [
 			gh corkboard --as human:owner access grant topic:specs --to agent:test --permission status
 			gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
 			gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
-			  --description "Requirements for cursor pagination" --milestone "v1 launch" --concept "cursor pagination" \
+			  --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
 			  --status active --json < pagination.md
 			doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
 			gh corkboard --as agent:implementation doc get "$doc_id"
@@ -93,7 +93,7 @@ _proseNotes: [
 			review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
 			gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
 			gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-			  --milestone "v1 launch" --concept "cursor pagination" --json
+			  --milestone "v1 launch/specs" --concept cursor/pagination --json
 			gh corkboard --as agent:implementation doc get "$review_id"
 			gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
 			```
@@ -160,18 +160,31 @@ _proseNotes: [
 			"""#
 	},
 	{
+		name:  "board.validation.internal"
+		title: "Validating the index and access policy"
+		markdown: #"""
+			Apply the field rules to the board-owned JSON files `index/documents.json` and `index/access.json`. Enforce the encoded size and nesting limits during parsing, reject duplicate member names before decoding into Go structs or maps, and validate the resulting objects with built-in JSON Schema Draft 2020-12. Run the Go checks for references, derived paths, unique IDs and grant pairs, and the required human administrator. [JSON Schema validation keywords](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-validation-keywords-for-str) · [Go JSON decoding behavior](https://pkg.go.dev/encoding/json#hdr-Security_Considerations)
+
+			Validate the persisted access policy before trusting its grants and the persisted index before using its paths. Validate the prospective internal JSON before changing a document or replacing its metadata. Invalid metadata supplied via CLI flags exits 2 with a field-specific diagnostic and leaves files and index entries unchanged. Treat descriptive text and comments as data, escape control and layout characters when rendering them in terminal summaries, and keep stored paths confined to the board during filesystem access.
+			"""#
+	},
+	{
 		name:  "board.index"
 		title: "Catalog and reconciliation"
 		markdown: #"""
 			`index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. A built-in schema validates structure, the UUID form, status, review comments, and digest. Go checks uniqueness of IDs and paths, that the scope and comment authors are registered, and that the stored path exactly matches the derived path. A malformed index blocks document selections and writes that would depend on it.
 
-			`milestone` and `concept` are optional free-text strings on each index entry. Set them with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace and preserve the remaining text and case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
+			`milestone` and `concept` are optional strings on each index entry. Writers choose their own values subject to the field rules. Use `/` to separate hierarchy segments. A concept has 1–48 characters total and each segment uses ASCII letters, as in `Cursor/Pagination`. A milestone has 1–64 characters total and allows digits, spaces, and version punctuation under the field rules, as in `v1 launch/Specs`. The length includes separators. Every segment must be nonempty. These labels are stored as metadata and have no effect on the derived document path.
 
-			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match the entire value case-insensitively after trimming the filter. A supplied filter requires a nonblank value and matches only entries with that field set. `--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
+			Set these fields with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace from the whole flag value before checking it and preserve its case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
+
+			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
+
+			`--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
 
 			New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. When CLI or external content changes, a prior `archived` status reverts to `draft` unless the CLI update explicitly sets a status for the new bytes.
 
-			`reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonempty `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
+			`reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonblank `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
 
 			`doc update --review-comment <text> --review-status <status>` inserts or replaces the caller's review. Supply `--review-locator <doc-id>` to include a link in that review. `--clear-review-comment` removes the caller's entire review and can be repeated safely. A review replacement and a clear are mutually exclusive. Both require the `status` permission and can be used independently of a lifecycle change. Author attribution comes from the resolved caller and is retained after grant revocation.
 

@@ -19,8 +19,8 @@
       "format": "md",
       "path": "topics/specs/pagination.md",
       "description": "Requirements for cursor pagination",
-      "milestone": "v1 launch",
-      "concept": "cursor pagination",
+      "milestone": "v1 launch/Specs",
+      "concept": "Cursor/Pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {

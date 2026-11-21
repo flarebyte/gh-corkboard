@@ -5,12 +5,12 @@
 # index search
 example_index_search() {
   gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-    --milestone "v1 launch" --concept "cursor pagination"
+    --milestone 'v1 launch/*' --concept 'cursor/*'
   # Expected stdout
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  approved  topic:specs / pagination (md)
   #   Requirements for cursor pagination
-  #   Milestone: v1 launch
-  #   Concept: cursor pagination
+  #   Milestone: v1 launch/Specs
+  #   Concept: Cursor/Pagination
   #   agent:specs [pass] Acceptance criteria cover the edge cases.
   #   agent:test [pass] The test plan covers every criterion.
   #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f

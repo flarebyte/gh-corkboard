@@ -1,0 +1,33 @@
+document,field,type,presence,validation,stage,concept
+both,$,object,required,Accept exactly one complete UTF-8 JSON object. Reject duplicate keys at every depth and trailing non-whitespace after the root. Reject unpaired Unicode surrogates in string escapes. Allow at most 8 object or array levels counting the root as level 1.,parser,board.validation.internal
+both,every object,object,applies when present,Reject unknown properties and null values. Only the reviewComments object uses dynamic keys and each key must be a canonical principal ID.,schema,board.validation.internal
+both,slug,string,shared rule,"1–64 ASCII characters matching ^[a-z0-9][a-z0-9_-]{0,63}$ over the whole value. Reject platform-reserved names.",schema and Go,board.validation.internal
+both,display text,string,shared rule,"Reject Unicode control characters, bidi controls, U+2028, and U+2029. Multiline display text also allows LF and tabs.",Go,board.validation.internal
+index/documents.json,$,object,required,Limit to 32 MiB of encoded JSON including whitespace.,parser and writer,board.validation.internal.index
+index/documents.json,version,integer,required,JSON number 1. Reject unsupported versions.,schema and Go,board.validation.internal.index
+index/documents.json,documents,array of objects,required,Allow an empty list. Store entries in lexical path order. UUIDs and canonical paths are independently unique.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].id,string,required,Exactly 36 ASCII characters. Canonical lowercase UUIDv4 with the RFC variant.,schema,board.validation.internal.index
+index/documents.json,documents[].scope,string,required,Prefix agent: or skill: or topic: followed by a slug. The scope must be registered in the access policy.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].name,string,required,Slug. Reject platform-reserved names.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].format,string,required,One of json or csv or md.,schema,board.validation.internal.index
+index/documents.json,documents[].schemaId,string,optional,Slug. Reject platform-reserved names. A missing schema is reported by document validation.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].path,string,required,At most 206 ASCII characters. Must exactly equal the canonical board-relative path derived from scope and filename fields. Resolve filesystem access inside the board root and reject symlinks.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].description,string,required,0–500 Unicode code points. Single-line display text.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].milestone,string,optional,"1–64 ASCII characters total including slash separators. Full-string pattern ^[A-Za-z0-9][A-Za-z0-9 ._-]*(/[A-Za-z0-9][A-Za-z0-9 ._-]*)*$. Reject trailing whitespace in each segment.",schema and Go,board.validation.internal.index
+index/documents.json,documents[].concept,string,optional,"1–48 ASCII characters total including slash separators. Each segment contains only letters. Full-string pattern ^[A-Za-z]+(/[A-Za-z]+)*$.",schema,board.validation.internal.index
+index/documents.json,documents[].status,string,required,One of the lifecycle states in lifecycle.csv.,schema,board.validation.internal.index
+index/documents.json,documents[].sha256,string,required,Exactly 64 lowercase hexadecimal characters. Audit compares it to the digest of the stored bytes on disk.,schema and audit,board.validation.internal.index
+index/documents.json,documents[].reviewComments,object,required,Allow an empty object. Each key is a registered principal ID. Each value is one review object.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].reviewComments.*.comment,string,required,1–2000 Unicode code points. Must contain non-whitespace text. Multiline display text.,schema and Go,board.validation.internal.index
+index/documents.json,documents[].reviewComments.*.status,string,required,One of pass or warning or fail.,schema,board.validation.internal.index
+index/documents.json,documents[].reviewComments.*.locator,string,optional,Canonical lowercase UUIDv4 with the RFC variant. Check the target exists and is readable when assigning it. A stored reference can outlive its target.,schema and Go,board.validation.internal.index
+index/access.json,$,object,required,Limit to 4 MiB of encoded JSON including whitespace.,parser and writer,board.validation.internal.access
+index/access.json,version,integer,required,JSON number 1. Reject unsupported versions.,schema and Go,board.validation.internal.access
+index/access.json,principals,array of objects,required,Require at least one human admin. Principal IDs must be unique.,schema and Go,board.validation.internal.access
+index/access.json,principals[].id,string,required,Prefix human: or agent: or skill: followed by a slug. Reject platform-reserved slug names.,schema and Go,board.validation.internal.access
+index/access.json,principals[].role,string,optional,Either member or admin. Omitted defaults to member. Only a human principal can have the admin role.,schema and Go,board.validation.internal.access
+index/access.json,topics,array of strings,required,Allow an empty list. Each topic is a unique slug. Reject platform-reserved names.,schema and Go,board.validation.internal.access
+index/access.json,grants,array of objects,required,Allow an empty list. Require at most one entry per scope and principal pair.,schema and Go,board.validation.internal.access
+index/access.json,grants[].scope,string,required,Prefix agent: or skill: or topic: followed by a slug. Must refer to an existing private owner or registered topic.,schema and Go,board.validation.internal.access
+index/access.json,grants[].principal,string,required,Canonical principal ID. Must refer to a registered principal.,schema and Go,board.validation.internal.access
+index/access.json,grants[].permissions,array of strings,required,1–4 distinct values. A topic allows read or write or status or delete. A private scope allows read or status.,schema,board.validation.internal.access

@@ -52,6 +52,9 @@ reports: [{
 			title: "Index and lifecycle"
 			notes: ["board.index", "board.index.path-resolution", "board.index.example", "board.lifecycle"]
 		}, {
+			title: "Internal JSON validation"
+			notes: ["board.validation.internal", "board.validation.internal.fields"]
+		}, {
 			title: "Document patching"
 			notes: ["board.patching"]
 		}, {
@@ -80,4 +83,5 @@ notes: list.Concat([[
 	{name: "board.access.permissions", title: "Permissions by scope", filepath: "examples/scope-permissions.csv"},
 	{name: "board.usecases", title: "Core workflows", filepath: "examples/usecases.csv"},
 	{name: "board.validation.formats", title: "Validation inputs by format", filepath: "examples/validation-inputs.csv"},
+	{name: "board.validation.internal.fields", title: "Field validation rules", filepath: "examples/internal-json-validation.csv"},
 ], _proseNotes, _commandOutputNotes])
