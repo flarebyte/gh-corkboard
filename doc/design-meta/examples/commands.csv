@@ -1,26 +1,26 @@
 command,access,contract,concept
 `init`,Human bootstrap or existing admin,Initialize the worktree board and ensure a root ignore rule,board.cli
-`access whoami`,Active principal,Return the selected principal and its effective permissions by scope,board.access
-`access principal add <principal> [--role <member|topic-admin|admin>]`,Admin,Register an active principal and provision its folder for an agent or skill,board.access
-`access principal list`,Admin or topic admin,List principals and their state,board.access
-`access principal set <principal> [--role <member|topic-admin|admin>] [--state <active|disabled>]`,Admin,Change a principal's role or state while retaining existing documents and grants,board.access
-`access topic create <topic-id>`,Admin or topic admin,Register a topic with no grants,board.access
-`access topic delete <topic-id>`,Admin or topic admin,Remove an empty topic and its grants,board.access
-`access list [--scope <scope>]`,Admin or topic admin or private scope owner,Show grants within the caller's policy management scope,board.access
-`access grant <scope> --to <principal> --permission <read|write|delete>`,Admin or topic admin or private scope owner,Add one explicit permission subject to scope and role rules,board.access
-`access revoke <scope> --from <principal> --permission <read|write|delete>`,Admin or topic admin or private scope owner,Remove one explicit permission subject to scope and role rules,board.access
+`access whoami`,Registered principal,Return the selected principal and its effective permissions by scope,board.access
+`access principal add <principal> [--role <member|admin>]`,Admin,Register a principal and provision its folder for an agent or skill,board.access
+`access principal list`,Admin,List registered principals and their roles,board.access
+`access principal set <principal> --role <member|admin>`,Admin,Change a principal's role while retaining existing documents and grants,board.access
+`access topic create <topic-id>`,Admin,Register a topic with no grants,board.access
+`access topic delete <topic-id>`,Admin,Remove an empty topic folder with no remaining index entries and remove its grants,board.access
+`access list [--scope <scope>]`,Admin or private scope owner,Show grants the caller is authorized to inspect,board.access
+`access grant <scope> --to <principal> --permission <read|write|delete|status>`,Admin,Add one explicit permission allowed for the scope,board.access
+`access revoke <scope> --from <principal> --permission <read|write|delete|status>`,Admin,Remove one explicit permission allowed for the scope,board.access
 `schema create <format> <schema-id>`,Admin,Register a valid schema from stdin,board.validation
-`schema get <format> <schema-id>`,Active principal,Write stored schema bytes to stdout,board.validation
-`schema list [--format <format>]`,Active principal,List registered schemas ordered by format and ID,board.validation
+`schema get <format> <schema-id>`,Registered principal,Write stored schema bytes to stdout,board.validation
+`schema list [--format <format>]`,Registered principal,List registered schemas ordered by format and ID,board.validation
 `schema update <format> <schema-id>`,Admin,Replace an existing schema with a valid definition from stdin,board.validation
 `schema delete <format> <schema-id>`,Admin,Delete an unused schema,board.validation
-`doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>]`,Scope write plus delete for obsolete status,Read bytes from stdin and return the new document UUID,board.documents
+`doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>]`,Scope write plus status when supplied,Read bytes from stdin and return the new document UUID,board.documents
 `doc get <doc-id>`,Scope read,Write stored document bytes to stdout,board.documents
-`doc update <doc-id> [--stdin] [--description <text>] [--status <status>]`,Scope write plus delete for obsolete status,Replace supplied metadata or read replacement bytes from stdin when requested,board.documents
-`doc delete <doc-id>`,Topic delete or board admin,Delete a document and remove its index entry,board.documents
+`doc update <doc-id> [--stdin] [--description <text>] [--status <status>] [--review-comment <text>|--clear-review-comment]`,Scope write for content or description and scope status for lifecycle or own review comment,Apply the supplied changes to the document and index,board.documents
+`doc delete <doc-id>`,Topic delete or board admin,Delete one document and remove its index entry while retaining the folder,board.documents
 `doc validate <doc-id|--all>`,Scope read,Validate the selected document or all readable indexed documents,board.validation
-`index search [--in <scope>] [--status <status>] [--query <text>]`,Active principal,Search metadata of readable documents and return logical identifiers,board.index
+`index search [--in <scope>] [--status <status>] [--query <text>]`,Registered principal,Search metadata of readable documents and return logical identifiers,board.index
 `index audit`,Admin,Report filesystem and index discrepancies without changing board data,board.index
 `index resync`,Admin,Reconcile the catalog with valid managed locations and preserve surviving metadata,board.index
-`index prune [--apply --expect <plan-id>]`,Admin,Preview or apply removal of obsolete documents,board.retention
+`index prune [--apply --expect <plan-id>]`,Admin,Preview or apply removal of archived documents,board.retention
 `snapshot create [--expect <plan-id>]`,Admin,Write a ZIP of the board to stdout and optionally verify a prune plan first,board.retention

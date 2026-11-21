@@ -14,7 +14,7 @@ reports: [{
 		title: "Access control"
 		sections: [{
 			title: "Principals and permissions"
-			notes: ["board.access"]
+			notes: ["board.access", "board.access.permissions", "board.access.policy-example"]
 		}]
 	}, {
 		title: "Board and communication"
@@ -35,10 +35,16 @@ reports: [{
 		title: "Storage and validation"
 		sections: [{
 			title: "Schema registry and projections"
-			notes: ["board.validation", "board.contracts"]
+			notes: [
+				"board.validation",
+				"board.validation.formats",
+				"board.validation.projection.csv",
+				"board.validation.projection.markdown",
+				"board.contracts",
+			]
 		}, {
 			title: "Index and lifecycle"
-			notes: ["board.index", "board.lifecycle"]
+			notes: ["board.index", "board.index.example", "board.lifecycle"]
 		}, {
 			title: "Retention"
 			notes: ["board.retention"]
@@ -53,9 +59,15 @@ reports: [{
 }]
 
 notes: list.Concat([[
+	{name: "board.access.policy-example", title: "Access policy example", filepath: "examples/access-policy.json"},
 	{name: "board.commands", title: "Command reference", filepath: "examples/commands.csv"},
 	{name: "board.concepts", title: "Concept registry", filepath: "examples/concepts.csv"},
 	{name: "board.contracts", title: "Data and diagnostic shapes", filepath: "examples/contracts.ts"},
+	{name: "board.index.example", title: "Document index example", filepath: "examples/documents.json"},
+	{name: "board.validation.projection.csv", title: "CSV projection example", filepath: "examples/csv-projection.json"},
 	{name: "board.lifecycle", title: "Lifecycle statuses", filepath: "examples/lifecycle.csv"},
+	{name: "board.validation.projection.markdown", title: "Markdown projection example", filepath: "examples/markdown-projection.json"},
+	{name: "board.access.permissions", title: "Permissions by scope", filepath: "examples/scope-permissions.csv"},
 	{name: "board.usecases", title: "Core workflows", filepath: "examples/usecases.csv"},
+	{name: "board.validation.formats", title: "Validation inputs by format", filepath: "examples/validation-inputs.csv"},
 ], _proseNotes])

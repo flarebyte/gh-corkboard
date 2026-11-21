@@ -1,8 +1,17 @@
-type Status = "draft" | "active" | "review" | "resolved" | "obsolete";
+type Status =
+  | "draft"
+  | "active"
+  | "blocked"
+  | "review"
+  | "approved"
+  | "rejected"
+  | "resolved"
+  | "obsolete"
+  | "archived";
 type Format = "json" | "csv" | "md";
 type PrincipalId = `${"human" | "agent" | "skill"}:${string}`;
 type Scope = `${"agent" | "skill" | "topic"}:${string}`;
-type Permission = "read" | "write" | "delete";
+type Permission = "read" | "write" | "delete" | "status";
 type DocumentId = string; // Canonical lowercase UUIDv4
 
 interface AccessPolicy {
@@ -14,8 +23,7 @@ interface AccessPolicy {
 
 interface Principal {
   id: PrincipalId;
-  role: "member" | "topic-admin" | "admin";
-  state: "active" | "disabled";
+  role?: "member" | "admin"; // Defaults to member
 }
 
 interface ScopeGrant {
@@ -32,6 +40,7 @@ interface DocumentMetadata {
   schemaId?: string;
   description: string;
   status: Status;
+  reviewComments: Partial<Record<PrincipalId, string>>;
 }
 
 interface Index {

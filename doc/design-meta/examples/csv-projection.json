@@ -1,0 +1,12 @@
+{
+  "columns": [
+    "id",
+    "priority"
+  ],
+  "rows": [
+    {
+      "id": "pagination",
+      "priority": "01"
+    }
+  ]
+}

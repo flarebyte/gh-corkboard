@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "documents": [
+    {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "path": "topics/specs/pagination.md",
+      "description": "Requirements for cursor pagination",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": "Acceptance criteria cover the edge cases.",
+        "agent:test": "The test plan covers every criterion."
+      },
+      "sha256": "bf706ffa8256beee042e4d36fd262ed2afed5c0408962814edcaddc83be4f44a"
+    }
+  ]
+}
