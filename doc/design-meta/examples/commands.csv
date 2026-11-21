@@ -17,6 +17,7 @@ command,access,contract,concept
 `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>] [--preserve-row-order]`,Scope write plus status when supplied,Format stdin content before saving and return the new document UUID,board.formatting
 `doc get <doc-id>`,Scope read,Write stored document bytes to stdout,board.documents
 `doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]`,Scope read,Return the UUID for one exact logical document name,board.documents
+`doc patch <doc-id> --expect <sha256> [--preserve-row-order]`,Scope write,Apply a patch from stdin to the exact base revision and format the result,board.patching
 `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass|warning|fail> [--review-locator <doc-id>]|--clear-review-comment]`,Scope write for content or description and scope status for lifecycle or own review,Format replacement content before saving and report whether formatting changed the supplied bytes,board.formatting
 `doc delete <doc-id>`,Topic delete or board admin,Delete one document and remove its index entry while retaining the folder,board.documents
 `doc validate <doc-id|--all>`,Scope read,Validate the selected document or all readable indexed documents,board.validation

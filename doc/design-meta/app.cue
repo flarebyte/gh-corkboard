@@ -49,6 +49,9 @@ reports: [{
 			title: "Index and lifecycle"
 			notes: ["board.index", "board.index.path-resolution", "board.index.example", "board.lifecycle"]
 		}, {
+			title: "Document patching"
+			notes: ["board.patching"]
+		}, {
 			title: "Retention"
 			notes: ["board.retention"]
 		}]

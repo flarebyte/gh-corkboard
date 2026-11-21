@@ -53,6 +53,53 @@ example_doc_update_content() {
   # Formatting changed the supplied bytes.
 }
 
+# doc patch (Markdown)
+# Save the exact bytes from doc get as pagination.before.md before drafting the patch.
+example_doc_patch_markdown() {
+  local expected
+  expected=$(shasum -a 256 < pagination.before.md) || return
+  gh corkboard --as agent:specs doc patch 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "${expected%% *}" <<'PATCH'
+--- document
++++ document
+@@ -5 +5 @@
+-- Return the next cursor when more results are available.
++- Return a next cursor only when more results are available.
+PATCH
+  # Expected stdout
+  # Patched document 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb.
+}
+
+# doc patch (CSV)
+# The captured priorities.before.csv contains id,priority followed by p1,01 and p2,02.
+example_doc_patch_csv() {
+  local expected
+  expected=$(shasum -a 256 < priorities.before.csv) || return
+  gh corkboard --as agent:specs doc patch 11290eeb-00c7-44c0-83e9-a4618ec9d3f4 --expect "${expected%% *}" <<'PATCH'
+--- document
++++ document
+@@ -1,3 +1,4 @@
+ id,priority
+ p1,01
+ p2,02
++p0,00
+PATCH
+  # Expected stdout
+  # Patched document 11290eeb-00c7-44c0-83e9-a4618ec9d3f4.
+  # Formatting changed the patched content.
+}
+
+# doc patch (JSON)
+# pagination.before.json contains the exact doc get output used to prepare the merge patch.
+example_doc_patch_json() {
+  local expected
+  expected=$(shasum -a 256 < pagination.before.json) || return
+  gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}" <<'PATCH'
+{"pageSize":50}
+PATCH
+  # Expected stdout
+  # Patched document fa334448-c8de-42b0-b013-ebc87dc5f7ae.
+}
+
 # doc delete
 example_doc_delete() {
   gh corkboard --as human:owner doc delete b69ac8e7-6755-4249-83ef-211daa24ab6f

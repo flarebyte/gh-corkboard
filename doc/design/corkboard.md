@@ -65,6 +65,7 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
 | Skill principal | board.access | skill-reference | The agents can find guidance by scope or description | Ask a board admin to grant read access to selected agents |
 | Specification and test agents | board.index | review | Readers can see the comments and open linked documents where they have read access | Record separate review outcomes and link to supporting documents by UUID |
 | Document author | board.validation | draft | The draft is formatted on write and the validator reports the missing fields | Save a well-formed draft missing required schema fields and run validation |
+| Document author | board.patching | patch | The patch updates one document or reports a stale base without changing it | Send a small patch against the exact bytes returned by doc get |
 | Board administrator | board.retention | retire | The selected files are removed and the prior board can be inspected offline | Preview archived documents then save a ZIP snapshot before applying cleanup |
 
 ### Workspace
@@ -130,6 +131,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 | Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Format stdin content before saving and return the new document UUID |
 | Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
 | Scope read | `doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]` | board.documents | Return the UUID for one exact logical document name |
+| Scope write | `doc patch <doc-id> --expect <sha256> [--preserve-row-order]` | board.patching | Apply a patch from stdin to the exact base revision and format the result |
 | Scope write for content or description and scope status for lifecycle or own review | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Format replacement content before saving and report whether formatting changed the supplied bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
@@ -143,7 +145,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 
 Commands in the table follow `gh corkboard --as <principal>`. They address board resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
-Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document content supplied to a write. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
+Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document or patch content. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
 
 `doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
@@ -189,6 +191,7 @@ Exercise scoped create and denied cross-scope mutations. Verify that an admin ca
 | Document formats names and lifecycle | board.documents | board |
 | Automatic formatting on document writes | board.formatting | board |
 | Metadata search and filesystem reconciliation | board.index | board |
+| Revision checked document patches | board.patching | board |
 | Obsolete documents and snapshots | board.retention | board |
 | Schema registry and validation profiles | board.validation | board |
 
@@ -198,7 +201,7 @@ Exercise scoped create and denied cross-scope mutations. Verify that an admin ca
 
 #### Automatic formatting on write
 
-Every CLI write of document content runs the format-specific formatter before saving. `doc create` formats stdin using the requested format. `doc update --stdin` formats replacement bytes using the indexed document format. Metadata-only updates and index resync operate on the index. Use deterministic and idempotent rules so the same content and formatting options always produce the same bytes.
+Every CLI write of document content runs the format-specific formatter before saving. `doc create` formats stdin using the requested format. `doc update --stdin` formats replacement bytes using the indexed document format. `doc patch` formats the patched result. Metadata-only updates and index resync operate on the index. Use deterministic and idempotent rules so the same content and formatting options always produce the same bytes.
 
 For CSV, sort data records by the first column when its header is `id` or `name`, matched case-insensitively. Compare cell text lexicographically and case-sensitively, keeping the input order for equal keys. For example, IDs `b2` and `a1` appear as `a1` and `b2` after formatting. For other first headers, preserve row order. Use `--preserve-row-order` on a CSV content write when the order carries meaning, including when a schema constrains row positions. It keeps the supplied row order and applies the other CSV formatting rules. Using it for another format or without content to write is a usage error.
 
@@ -215,6 +218,22 @@ For a successful `doc update --stdin`, set `formattingChanged` in the JSON resul
 | Markdown | Normalize line endings to LF and ensure a final newline for nonempty documents. Preserve author layout including paragraph wrapping, line breaks created by trailing spaces, list indentation, and the contents and indentation of code blocks apart from newline normalization. |
 | JSON | Indent with two spaces and use one final newline. Sort object keys lexicographically at every level. Preserve array order, string values, and the numeric token spelling so formatting cannot lose precision. |
 | CSV | Use comma delimiters and LF record endings. Quote fields containing commas, double quotes or line breaks, and escape embedded quotes by doubling them. Preserve header order and cell text, including whitespace, leading zeros, and newlines inside quoted fields. Quote an empty cell when it is the only field in a record so the record survives parsing. |
+
+### Document patching
+
+#### Patch an existing document
+
+`doc patch <doc-id> --expect <sha256>` reads a patch from stdin and requires write access. The indexed document format selects the patch syntax. Keep `doc update --stdin` for full replacements. To create a patch, save the exact bytes from `doc get`, derive the patch from that copy, and pass its lowercase hexadecimal SHA-256 digest to `--expect`. Use the hash of the saved base, including its newlines.
+
+For Markdown and CSV, accept one textual unified diff with `---` and `+++` headers and at least one hunk. Use `diff -u` on the saved base and an edited copy to generate the hunk ranges. Header names are opaque labels, and `document` works for both. The UUID selects the target. Match every hunk's position and context exactly, including line endings. Reject multi-file patches, binary data, file creation or deletion markers, and Git rename or mode metadata. For CSV, hunks refer to physical lines, including lines inside quoted cells. Parse the full resulting CSV and apply the normal formatting and sorting rules. `--preserve-row-order` works for CSV patches.
+
+For JSON, use RFC 7396. Merge objects recursively, delete an object member whose patch value is `null`, and replace arrays as whole values. A non-object root patch replaces the root value. Parse the base and patch under the board's strict JSON rules and preserve numeric tokens. The merge operates on values and serializes the result in the canonical JSON format. Use full replacement to give an object member the literal value `null`. [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396#section-2)
+
+Under the board lock, check authorization and hash the current file bytes before applying the patch. A changed base or mismatched hunk exits 2 and writes nothing. In JSON mode, stderr carries a diagnostic object with `code` and `message`. Use `patch_base_changed` for a digest mismatch and `patch_context_mismatch` for a hunk mismatch. Read the document again and regenerate the patch from that base. Malformed patch input or a result with invalid native syntax exits 1 with diagnostics and performs no write. Schema validation remains a separate command.
+
+Apply a patch to a temporary result and use the established document write and index update flow after all checks pass. The document keeps its ID and existing metadata, subject to the usual archived-to-draft rule when bytes change. Successful patch output has the same document metadata shape as a content update. For text patches, `formattingChanged` compares the patched text with the formatted result. When true, the default text output adds `Formatting changed the patched content.` JSON patches produce canonical JSON directly, so their results omit this field.
+
+In Go, evaluate `go-gitdiff` for parsing unified text and applying it in strict mode to a buffer. Validate the single-document patch shape before applying it. For JSON, use the existing strict decoder and implement the RFC merge over the parsed values, preserving numeric tokens with `json.Number`. The upstream `json-patch/v5` repository exposes Merge Patch, but its source contains paths that prune nulls from replacement arrays. Qualify any dependency against RFC 7396 Appendix A, nulls inside arrays, null roots, and large numbers. Test the unified diff adapter with strict context, insertions, and the missing-final-newline marker. [Go unified diff parser](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/parser.go) · [Strict text application](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/apply_text.go) · [Go JSON number decoding](https://pkg.go.dev/encoding/json#Decoder.UseNumber) · [Merge Patch implementation](https://github.com/evanphx/json-patch/blob/master/v5/merge.go)
 
 ### Index and lifecycle
 
@@ -373,7 +392,7 @@ interface DocumentMetadata {
 }
 
 interface DocumentUpdateResult extends DocumentMetadata {
-  formattingChanged?: boolean; // Present for content updates
+  formattingChanged?: boolean; // Present for stdin replacements and text patches
 }
 
 interface Index {

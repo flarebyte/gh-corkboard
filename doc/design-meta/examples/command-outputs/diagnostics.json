@@ -33,5 +33,11 @@
         }
       ]
     }
+  },
+  "jsonStderr": {
+    "doc patch (stale base)": {
+      "code": "patch_base_changed",
+      "message": "Document changed since the base was read. Read it again and regenerate the patch."
+    }
   }
 }

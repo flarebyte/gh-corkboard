@@ -34,3 +34,14 @@ example_unavailable_document() {
   # Expected stderr
   # error: document unavailable
 }
+
+# Stale patch base
+# A changed base exits 2 and leaves the file and index untouched.
+example_stale_patch_base() {
+  local expected
+  expected=$(shasum -a 256 < pagination.before.json) || return
+  printf '%s\n' '{"pageSize":50}' |
+    gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}"
+  # Expected stderr
+  # error: document changed since the base was read. Read it again and regenerate the patch.
+}

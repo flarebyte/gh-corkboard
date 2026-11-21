@@ -42,6 +42,46 @@
       "reviewComments": {},
       "formattingChanged": true
     },
+    "doc patch (Markdown)": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Requirements for cursor pagination",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
+      },
+      "formattingChanged": false
+    },
+    "doc patch (CSV)": {
+      "id": "11290eeb-00c7-44c0-83e9-a4618ec9d3f4",
+      "scope": "topic:specs",
+      "name": "priorities",
+      "format": "csv",
+      "description": "Priority by item",
+      "status": "draft",
+      "reviewComments": {},
+      "formattingChanged": true
+    },
+    "doc patch (JSON)": {
+      "id": "fa334448-c8de-42b0-b013-ebc87dc5f7ae",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "json",
+      "schemaId": "spec",
+      "description": "Requirements for cursor pagination",
+      "status": "draft",
+      "reviewComments": {}
+    },
     "doc delete": {
       "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
       "deleted": true

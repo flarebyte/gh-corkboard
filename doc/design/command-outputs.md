@@ -1,6 +1,6 @@
 # CLI output examples
 
-Each Bash function shows an independent command example and its expected output. Success examples exit 0. In the JSON files, jsonStdout maps commands to the response with --json, and rawStdout contains stored JSON emitted directly. For commands with input redirection, place --json before the redirection.
+Each Bash function shows an independent command example and its expected output. Success examples exit 0. In the JSON files, jsonStdout and jsonStderr map commands to output with --json. rawStdout contains stored JSON emitted directly. For commands with input redirection, place --json before the redirection.
 
 ## Board setup and access
 
@@ -250,6 +250,17 @@ example_unavailable_document() {
   # Expected stderr
   # error: document unavailable
 }
+
+# Stale patch base
+# A changed base exits 2 and leaves the file and index untouched.
+example_stale_patch_base() {
+  local expected
+  expected=$(shasum -a 256 < pagination.before.json) || return
+  printf '%s\n' '{"pageSize":50}' |
+    gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}"
+  # Expected stderr
+  # error: document changed since the base was read. Read it again and regenerate the patch.
+}
 ```
 
 ### JSON output
@@ -291,6 +302,12 @@ example_unavailable_document() {
           "message": "Unexpected end of input."
         }
       ]
+    }
+  },
+  "jsonStderr": {
+    "doc patch (stale base)": {
+      "code": "patch_base_changed",
+      "message": "Document changed since the base was read. Read it again and regenerate the patch."
     }
   }
 }
@@ -358,6 +375,53 @@ example_doc_update_content() {
   # Formatting changed the supplied bytes.
 }
 
+# doc patch (Markdown)
+# Save the exact bytes from doc get as pagination.before.md before drafting the patch.
+example_doc_patch_markdown() {
+  local expected
+  expected=$(shasum -a 256 < pagination.before.md) || return
+  gh corkboard --as agent:specs doc patch 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --expect "${expected%% *}" <<'PATCH'
+--- document
++++ document
+@@ -5 +5 @@
+-- Return the next cursor when more results are available.
++- Return a next cursor only when more results are available.
+PATCH
+  # Expected stdout
+  # Patched document 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb.
+}
+
+# doc patch (CSV)
+# The captured priorities.before.csv contains id,priority followed by p1,01 and p2,02.
+example_doc_patch_csv() {
+  local expected
+  expected=$(shasum -a 256 < priorities.before.csv) || return
+  gh corkboard --as agent:specs doc patch 11290eeb-00c7-44c0-83e9-a4618ec9d3f4 --expect "${expected%% *}" <<'PATCH'
+--- document
++++ document
+@@ -1,3 +1,4 @@
+ id,priority
+ p1,01
+ p2,02
++p0,00
+PATCH
+  # Expected stdout
+  # Patched document 11290eeb-00c7-44c0-83e9-a4618ec9d3f4.
+  # Formatting changed the patched content.
+}
+
+# doc patch (JSON)
+# pagination.before.json contains the exact doc get output used to prepare the merge patch.
+example_doc_patch_json() {
+  local expected
+  expected=$(shasum -a 256 < pagination.before.json) || return
+  gh corkboard --as agent:specs doc patch fa334448-c8de-42b0-b013-ebc87dc5f7ae --expect "${expected%% *}" <<'PATCH'
+{"pageSize":50}
+PATCH
+  # Expected stdout
+  # Patched document fa334448-c8de-42b0-b013-ebc87dc5f7ae.
+}
+
 # doc delete
 example_doc_delete() {
   gh corkboard --as human:owner doc delete b69ac8e7-6755-4249-83ef-211daa24ab6f
@@ -422,6 +486,46 @@ example_doc_validate() {
       "status": "draft",
       "reviewComments": {},
       "formattingChanged": true
+    },
+    "doc patch (Markdown)": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Requirements for cursor pagination",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
+      },
+      "formattingChanged": false
+    },
+    "doc patch (CSV)": {
+      "id": "11290eeb-00c7-44c0-83e9-a4618ec9d3f4",
+      "scope": "topic:specs",
+      "name": "priorities",
+      "format": "csv",
+      "description": "Priority by item",
+      "status": "draft",
+      "reviewComments": {},
+      "formattingChanged": true
+    },
+    "doc patch (JSON)": {
+      "id": "fa334448-c8de-42b0-b013-ebc87dc5f7ae",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "json",
+      "schemaId": "spec",
+      "description": "Requirements for cursor pagination",
+      "status": "draft",
+      "reviewComments": {}
     },
     "doc delete": {
       "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",

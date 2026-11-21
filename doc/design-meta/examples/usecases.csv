@@ -4,4 +4,5 @@ self-note,Any agent,Write under its own agent scope,The agent can recover local 
 skill-reference,Skill principal,Ask a board admin to grant read access to selected agents,The agents can find guidance by scope or description,board.access
 review,Specification and test agents,Record separate review outcomes and link to supporting documents by UUID,Readers can see the comments and open linked documents where they have read access,board.index
 draft,Document author,Save a well-formed draft missing required schema fields and run validation,The draft is formatted on write and the validator reports the missing fields,board.validation
+patch,Document author,Send a small patch against the exact bytes returned by doc get,The patch updates one document or reports a stale base without changing it,board.patching
 retire,Board administrator,Preview archived documents then save a ZIP snapshot before applying cleanup,The selected files are removed and the prior board can be inspected offline,board.retention

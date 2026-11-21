@@ -16,7 +16,7 @@ _commandOutputSources: [
 _commandOutputReport: {
 	title:       "CLI output examples"
 	filepath:    "../design/command-outputs.md"
-	description: "Each Bash function shows an independent command example and its expected output. Success examples exit 0. In the JSON files, jsonStdout maps commands to the response with --json, and rawStdout contains stored JSON emitted directly. For commands with input redirection, place --json before the redirection."
+	description: "Each Bash function shows an independent command example and its expected output. Success examples exit 0. In the JSON files, jsonStdout and jsonStderr map commands to output with --json. rawStdout contains stored JSON emitted directly. For commands with input redirection, place --json before the redirection."
 	sections: [
 		for group in _commandOutputGroups {
 			title: group.title
