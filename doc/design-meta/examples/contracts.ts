@@ -2,7 +2,7 @@ type Status = "draft" | "active" | "review" | "resolved" | "obsolete";
 type Format = "json" | "csv" | "md";
 type PrincipalId = `${"human" | "agent" | "skill"}:${string}`;
 type Scope = `${"agent" | "skill" | "topic"}:${string}`;
-type Permission = "read" | "write";
+type Permission = "read" | "write" | "delete";
 type DocumentId = string; // Canonical lowercase UUIDv4
 
 interface AccessPolicy {
@@ -21,7 +21,7 @@ interface Principal {
 interface ScopeGrant {
   scope: Scope;
   principal: PrincipalId;
-  permission: Permission;
+  permissions: Permission[];
 }
 
 interface DocumentMetadata {

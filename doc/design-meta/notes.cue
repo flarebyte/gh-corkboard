@@ -7,16 +7,18 @@ _proseNotes: [
 		markdown: #"""
 			Every board command requires a global `--as <principal>` selector before the command. Principals are `human:<id>`, `agent:<id>`, or `skill:<id>`. The CLI resolves the principal's state and role through `index/access.json`. Help and version output are available without a principal. On first initialization, the supplied human becomes the first administrator. On an existing board, `init` requires an active administrator. A missing or damaged policy on an existing board blocks access and must be recovered by the operator. A repeated `init` cannot claim that board.
 
-			The policy is plaintext JSON validated against a built-in version-1 schema. Check unique principal and topic IDs, one grant per scope and principal, registered grant subjects and scopes, and at least one active administrator. New principals default to `member`. Only a human can hold `admin`. A human admin can assign `topic-admin` to a designated human or agent. Disabling a principal removes its effective access immediately while retaining its folder and grants. Re-enabling it restores access under the current policy.
+			The policy is plaintext JSON validated against a built-in version-1 schema. Check unique principal and topic IDs, one grant per scope and principal with a nonempty set of distinct permissions, registered grant subjects and scopes, and at least one active administrator. New principals default to `member`. Only a human can hold `admin`. A human admin can assign `topic-admin` to a designated human or agent. Disabling a principal removes its effective access immediately while retaining its folder and grants. Re-enabling it restores access under the current policy.
 
 			| Scope | Default access | Delegation |
 			| --- | --- | --- |
-			| `agent:<id>` and `skill:<id>` | The matching active principal has full document access to its scope. | The owner or an admin can grant or revoke read access for another principal. |
-			| `topic:<id>` | Document access requires a grant or the `admin` role. | Admins and delegated topic admins manage grants subject to their role. Write includes read, create, update, and delete for every document in the topic, including status and description changes. |
+			| `agent:<id>` and `skill:<id>` | The matching active principal has read and write access to its scope. Document deletion requires a board admin. | The owner or an admin can grant or revoke read access for another principal. |
+			| `topic:<id>` | Document access requires a grant or the `admin` role. | Admins and delegated topic admins manage read, write, and delete grants subject to their role. Each grant applies to the entire topic. |
+
+			`read` allows discovery, retrieval, and validation. `write` allows creation and updates and implies `read`. `delete` allows explicit document removal and implies `read`. In topics, a principal can hold either `write` or `delete` independently. Setting `obsolete` requires both permissions because it makes the document eligible for bulk cleanup. On an agent or skill channel, only a board admin can set `obsolete` or delete a document. Board-wide prune requires an administrator.
 
 			An active admin can manage all scopes and principals, read and write any document, mutate schemas, and run board-wide audit, resync, prune, and snapshots. A topic admin can list principals, create topics, delete empty topics, inspect topic grants, and grant or revoke topic access for principals with the `member` role. A human admin manages roles and grants topic document access to a topic admin when needed. The `topic-admin` role confers no document access or private scope administration on its own. With no scope filter, `access list` shows all grants for an admin and only topic grants for a topic admin. A private scope owner can inspect grants by selecting that scope.
 
-			All active principals can read the shared schema registry. `access whoami` returns the selected principal's role and effective permissions. Grant and revoke affect explicit grants only and leave owner and admin rights intact. Topic deletion requires an empty directory and no remaining index entries for that scope. Reject changes that would leave the board without an active admin.
+			All active principals can read the shared schema registry. `access whoami` returns the selected principal's role and effective permissions. `access grant` adds one permission and `access revoke` removes one. Both are idempotent. Remove the grant record when its permission set becomes empty. Revoking an explicit `read` grant leaves the read access implied by `write` or `delete` in place. Owners and admins retain their implicit rights. Private scope grants allow only `read`. Reject write and delete grants for private scopes in both CLI commands and policy validation, including grants to the owner. Topic deletion requires an empty directory and no remaining index entries for that scope. Reject changes that would leave the board without an active admin.
 
 			```json
 			{
@@ -29,8 +31,8 @@ _proseNotes: [
 			  ],
 			  "topics": ["specs"],
 			  "grants": [
-			    {"scope": "topic:specs", "principal": "agent:specs", "permission": "write"},
-			    {"scope": "topic:specs", "principal": "agent:implementation", "permission": "read"}
+			    {"scope": "topic:specs", "principal": "agent:specs", "permissions": ["write"]},
+			    {"scope": "topic:specs", "principal": "agent:implementation", "permissions": ["read"]}
 			  ]
 			}
 			```
@@ -101,7 +103,7 @@ _proseNotes: [
 			gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
 			```
 
-			Exercise scoped create, denied cross-scope mutations, owner read sharing, topic administration by a delegated agent, denial of attempts by that agent to grant itself topic access, UUID lookups after grant revocation, read filtering in search and bulk validation, malformed policy and forged index paths, and symlink rejection. Also exercise invalid drafts, schema changes, concurrent updates, stale prune plans, and archive failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+			Exercise scoped create, denied cross-scope mutations, owner read sharing, topic administration by a delegated agent, and denial of attempts by that agent to grant itself topic access. Verify that agent and skill owners can edit their own documents and are denied deletion and obsolete status, even if they hold delete access in a topic. Verify admin deletion in private scopes, rejection of private delete grants, and revoking topic delete while preserving write. Also exercise UUID lookups after grant revocation, read filtering in search and bulk validation, malformed policy and forged index paths, symlink rejection, invalid drafts, schema changes, concurrent updates, stale prune plans, and archive failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
 			"""#
 	},
 	{
@@ -131,7 +133,7 @@ _proseNotes: [
 		markdown: #"""
 			`index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. A built-in schema validates structure, the UUID form, status and digest. Go checks uniqueness of IDs and paths, that the scope is registered, and that the stored path exactly matches the derived path. A malformed index blocks document selections and writes that would depend on it.
 
-			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. The query is a case-insensitive substring of the name or description. Search returns indexed metadata. `doc get` reads the authorized file on disk. New entries default to an empty description and `draft`. Any status can be set explicitly by a writer. When CLI or external content changes, a prior `obsolete` status reverts to `draft` unless a CLI write explicitly sets a status for the new bytes.
+			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. The query is a case-insensitive substring of the name or description. Search returns indexed metadata. `doc get` reads the authorized file on disk. New entries default to an empty description and `draft`. Setting `obsolete` requires both write and delete access. When CLI or external content changes, a prior `obsolete` status reverts to `draft` unless an authorized CLI write explicitly sets a status for the new bytes.
 
 			Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported entries. `index resync` adopts files only in registered managed scopes and assigns new UUIDs and draft status. It preserves UUIDs and descriptions at surviving paths and preserves status except when bytes change for an obsolete document. It drops records for missing files and reports those removals and status resets. External renames appear as a missing path and a new file. Resync can rebuild a missing catalog with new IDs. It refuses to overwrite a malformed or unsupported index so its metadata remains recoverable. Use `doc validate --all` to check content in readable indexed documents.
 
