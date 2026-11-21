@@ -29,7 +29,7 @@ reports: [{
 		title: "Command interface"
 		sections: [{
 			title: "Commands"
-			notes: ["board.commands", "board.interface"]
+			notes: ["board.commands", "board.interface", "board.interface.review-workflow"]
 		}, {
 			title: "Help and discovery"
 			notes: ["board.cli.help"]
@@ -59,7 +59,7 @@ reports: [{
 			notes: ["board.patching"]
 		}, {
 			title: "Retention"
-			notes: ["board.retention"]
+			notes: ["board.retention", "board.retention.archive-workflow"]
 		}]
 	}, {
 		title: "Specification sources"
@@ -77,8 +77,10 @@ notes: list.Concat([[
 	{name: "board.contracts", title: "Data and diagnostic shapes", filepath: "examples/contracts.ts"},
 	{name: "board.formatting.formats", title: "Formatting rules by format", filepath: "examples/document-formatting.csv"},
 	{name: "board.index.example", title: "Document index example", filepath: "examples/documents.json"},
+	{name: "board.interface.review-workflow", title: "Review and handoff example", filepath: "examples/workflows/review.sh"},
 	{name: "board.validation.projection.csv", title: "CSV projection example", filepath: "examples/csv-projection.json"},
 	{name: "board.lifecycle", title: "Lifecycle statuses", filepath: "examples/lifecycle.csv"},
+	{name: "board.retention.archive-workflow", title: "Snapshot and prune example", filepath: "examples/workflows/archive-and-prune.sh"},
 	{name: "board.validation.projection.markdown", title: "Markdown projection example", filepath: "examples/markdown-projection.json"},
 	{name: "board.access.permissions", title: "Permissions by scope", filepath: "examples/scope-permissions.csv"},
 	{name: "board.usecases", title: "Core workflows", filepath: "examples/usecases.csv"},

@@ -73,7 +73,7 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
 
 #### Workspace and handoffs
 
-The Go binary is `gh-corkboard`, invoked as `gh corkboard`. The CLI uses the current Git worktree root, including from a subdirectory or linked worktree. Commands fail outside a Git worktree. Each board belongs to one checkout and works offline without GitHub authentication. Handoffs require agents to share that board. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+The Go binary is `gh-corkboard`, invoked as `gh corkboard`. Board commands require a Git worktree and resolve its root from the current directory, including in a linked worktree. Each board belongs to one checkout and works offline without GitHub authentication. Handoffs require agents to share that board. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
 
 ```text
 .gh-corkboard/
@@ -88,14 +88,17 @@ The Go binary is `gh-corkboard`, invoked as `gh corkboard`. The CLI uses the cur
 │       └── features.schema.json
 ├── agents/
 │   ├── implementation/
-│   └── specs/
-│       └── follow-up.md
+│   │   └── follow-up.md
+│   ├── specs/
+│   └── test/
+│       └── pagination-review.md
 ├── skills/
 │   └── review/
 └── topics/
     └── specs/
-        ├── pagination.spec.json
-        └── pagination.features.md
+        ├── pagination.features.md
+        ├── pagination.md
+        └── pagination.spec.json
 ```
 
 `init` creates the five top-level directories, the three schema format directories, a version-1 access policy and an empty version-1 index on first initialization. It adds `/.gh-corkboard/` as the final root `.gitignore` rule if needed, verifies the rule is effective, and reports tracked corkboard paths. Repeated initialization preserves existing board data.
@@ -147,39 +150,49 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 
 Board commands in the table follow `gh corkboard --as <principal>`. Run help directly with `gh corkboard help`. Board commands address resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
-Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document or patch content. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
+Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. Exit 0 for success. Exit 1 for validation failures, audit findings, or malformed document or patch content, with diagnostics on stdout. Exit 2 for usage, authorization, or operational failure, with errors on stderr. Search and validation list results use a stable lexical scope and filename order.
 
 `doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
 Find default text, JSON, raw streams, and representative diagnostics in the [CLI output examples](command-outputs.md).
 
-```sh
-gh corkboard --as human:owner init
-gh corkboard --as human:owner access principal add agent:specs
-gh corkboard --as human:owner access principal add agent:implementation
-gh corkboard --as human:owner access principal add agent:test
-gh corkboard --as human:owner access topic create specs
-gh corkboard --as human:owner access grant topic:specs --to agent:specs --permission write
-gh corkboard --as human:owner access grant topic:specs --to agent:specs --permission status
-gh corkboard --as human:owner access grant topic:specs --to agent:implementation --permission read
-gh corkboard --as human:owner access grant topic:specs --to agent:test --permission status
-gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
-gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
-  --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
-  --status active --json < pagination.md
-doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
-gh corkboard --as agent:implementation doc get "$doc_id"
-gh corkboard --as agent:specs doc update "$doc_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
-gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
-review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
-gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
-gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-  --milestone "v1 launch/specs" --concept cursor/pagination --json
-gh corkboard --as agent:implementation doc get "$review_id"
-gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
-```
-
 Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Verify formatting on both content write commands, CSV order preservation when requested, and unchanged file and index state when syntax is invalid. Verify that milestone and concept filters combine with other filters after read authorization and that clearing either value leaves the other intact. Also exercise malformed policy and index data, symlink rejection, well-formed drafts that fail schema validation, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+
+#### Review and handoff example
+
+```bash
+#!/usr/bin/env bash
+
+# Source this file in Bash and call example_review_workflow in a fresh Git worktree.
+# Have pagination.md, pagination-review.md, and follow-up.md in the current directory.
+example_review_workflow() (
+  set -euo pipefail
+
+  gh corkboard --as human:owner init
+  gh corkboard --as human:owner access principal add agent:specs
+  gh corkboard --as human:owner access principal add agent:implementation
+  gh corkboard --as human:owner access principal add agent:test
+  gh corkboard --as human:owner access topic create specs
+  gh corkboard --as human:owner access grant topic:specs --to agent:specs --permission write
+  gh corkboard --as human:owner access grant topic:specs --to agent:specs --permission status
+  gh corkboard --as human:owner access grant topic:specs --to agent:implementation --permission read
+  gh corkboard --as human:owner access grant topic:specs --to agent:test --permission status
+  gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
+    --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
+    --status active --json < pagination.md
+  doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
+  gh corkboard --as agent:implementation doc get "$doc_id"
+  gh corkboard --as agent:specs doc update "$doc_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
+  gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
+  review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
+  gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
+  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
+    --milestone "v1 launch/specs" --concept cursor/pagination --json
+  gh corkboard --as agent:implementation doc get "$review_id"
+  gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
+)
+```
 
 ### Help and discovery
 
@@ -245,7 +258,7 @@ For a successful `doc update --stdin`, set `formattingChanged` in the JSON resul
 
 For Markdown and CSV, accept one textual unified diff with `---` and `+++` headers and at least one hunk. Use `diff -u` on the saved base and an edited copy to generate the hunk ranges. Header names are opaque labels, and `document` works for both. The UUID selects the target. Match every hunk's position and context exactly, including line endings. Reject multi-file patches, binary data, file creation or deletion markers, and Git rename or mode metadata. For CSV, hunks refer to physical lines, including lines inside quoted cells. Parse the full resulting CSV and apply the normal formatting and sorting rules. `--preserve-row-order` works for CSV patches.
 
-For JSON, use RFC 7396. Merge objects recursively, delete an object member whose patch value is `null`, and replace arrays as whole values. A non-object root patch replaces the root value. Parse the base and patch under the board's strict JSON rules and preserve numeric tokens. The merge operates on values and serializes the result in the canonical JSON format. Use full replacement to give an object member the literal value `null`. [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396#section-2)
+For JSON, use RFC 7396. Merge objects recursively, delete an object member whose patch value is `null`, and replace arrays as whole values. A non-object root patch replaces the root value. Parse the base and patch using the native JSON rules for document content and preserve numeric tokens. The merge operates on values and serializes the result in the canonical JSON format. Use full replacement to give an object member the literal value `null`. [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396#section-2)
 
 Under the board lock, check authorization and hash the current file bytes before applying the patch. A changed base or mismatched hunk exits 2 and writes nothing. In JSON mode, stderr carries a diagnostic object with `code` and `message`. Use `patch_base_changed` for a digest mismatch and `patch_context_mismatch` for a hunk mismatch. Read the document again and regenerate the patch from that base. Malformed patch input or a result with invalid native syntax exits 1 with diagnostics and performs no write. Schema validation remains a separate command.
 
@@ -267,7 +280,7 @@ Set these fields with `--milestone` and `--concept` on `doc create` or `doc upda
 
 `--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
 
-New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. When CLI or external content changes, a prior `archived` status reverts to `draft` unless the CLI update explicitly sets a status for the new bytes.
+New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. A CLI content write or resync that records changed bytes resets `archived` to `draft`, unless an authorized CLI update supplies a status for the new bytes. Until resync records an external edit, prune checks the digest and skips the changed file.
 
 `reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonblank `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
 
@@ -400,11 +413,26 @@ An admin uses `index prune` to preview archived documents whose recorded digest 
 
 `snapshot create` writes the ZIP to stdout and can archive a board with index drift or invalid documents. ZIP entries start at `.gh-corkboard/` and include the five directories and their stored files, including the access policy. Exclude CLI lock bookkeeping and temporary files. Fail on unsafe entries or output errors. `--expect <plan-id>` compares the current prune plan before the CLI emits bytes. For a pre-prune archive, save the ZIP outside the board and apply the same plan only after the snapshot command succeeds. Prune checks the plan again, so changes to candidates between commands invalidate it. Discard incomplete output after an archive failure.
 
-```sh
-gh corkboard --as human:owner index prune --json
-# Use the plan ID from the preview.
-gh corkboard --as human:owner snapshot create --expect "$plan_id" > ../corkboard-before-prune.zip &&
-  gh corkboard --as human:owner index prune --apply --expect "$plan_id"
+#### Snapshot and prune example
+
+```bash
+#!/usr/bin/env bash
+
+# Source this file and run example_preview_prune. Review the candidates and planId.
+example_preview_prune() {
+  gh corkboard --as human:owner index prune --json
+}
+
+# Call with the reviewed plan ID and a new ZIP filename outside .gh-corkboard.
+# For example: example_archive_and_prune "$plan_id" ../corkboard-before-prune.zip
+example_archive_and_prune() (
+  plan_id=${1:?Supply the reviewed prune plan ID}
+  archive_path=${2:?Supply a ZIP filename outside the board}
+  set -o noclobber
+
+  gh corkboard --as human:owner snapshot create --expect "$plan_id" > "$archive_path" &&
+    gh corkboard --as human:owner index prune --apply --expect "$plan_id"
+)
 ```
 
 ### Schema registry and projections
@@ -514,7 +542,7 @@ The CSV projection supports required columns, header order, row count and string
 
 The Markdown projection supports required headings, order and multiplicity. For example, `## Acceptance **criteria**` yields the heading shown in the Markdown projection example. A schema can check for that entry with `contains` or enforce a sequence with `prefixItems`. Markdown prose and section body content remain outside the v1 schema contract. [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/)
 
-Well-formed documents remain writable even when schema validation would fail. On explicit validation, parse the native format first, report syntax or projection errors, then evaluate the declared schema when present. A well-formed plain document returns `schemaless`. Bound documents return `valid` or `invalid`. Report the instance path and source coordinates where available. CommonMark accepts free-form text. Schemaless Markdown therefore only requires decodable UTF-8. The index and access policy use built-in schemas and additional Go checks for uniqueness and references. User schema operations cannot alter those contracts.
+Well-formed documents remain writable even when schema validation would fail. `doc validate` parses the native format and evaluates any declared schema. It returns `invalid` for syntax or projection errors, a missing declared schema, or schema violations. It returns `schemaless` for well-formed documents without a declared schema and `valid` for documents that satisfy their declared schema. Report the instance path and source coordinates where available. CommonMark accepts free-form text. Schemaless Markdown therefore only requires decodable UTF-8. The index and access policy use built-in schemas and additional Go checks for uniqueness and references. User schema operations cannot alter those contracts.
 
 CUE supports composition and constraints across fields, and exposes validation and JSON Schema conversion through its Go API. Both engines would consume the same CSV and Markdown projections. Keeping one native JSON Schema engine gives authors reusable JSON artifacts for documents and the index. Revisit CUE if real board schemas need shared constraints or cross-field relationships that become hard to express in JSON Schema. [CUE and JSON Schema](https://cuelang.org/docs/concept/how-cue-works-with-json-schema/)
 
