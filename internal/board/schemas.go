@@ -171,9 +171,8 @@ func (a *Access) checkSchemaUnused(key SchemaKey) error {
 		}
 	}
 
-	suffix := "." + key.ID + "." + key.Format
 	for _, kind := range []string{"agents", "skills", "topics"} {
-		found, err := a.findBinding(kind, suffix)
+		found, err := a.findBinding(kind, key)
 		if err != nil {
 			return err
 		}
@@ -184,7 +183,7 @@ func (a *Access) checkSchemaUnused(key SchemaKey) error {
 	return nil
 }
 
-func (a *Access) findBinding(kind, suffix string) (bool, error) {
+func (a *Access) findBinding(kind string, key SchemaKey) (bool, error) {
 	container, err := openDirectory(a.root, kind)
 	if err != nil {
 		return false, err
@@ -208,15 +207,8 @@ func (a *Access) findBinding(kind, suffix string) (bool, error) {
 			return false, err
 		}
 		for _, entry := range entries {
-			base, ok := strings.CutSuffix(entry.Name(), suffix)
-			if !ok {
-				continue
-			}
-			id, name, separated := strings.Cut(base, "--")
-			if separated && uuidV4.MatchString(id) {
-				base = name
-			}
-			if validSlug(base) {
+			doc, ok := documentFromFilename("", entry.Name())
+			if ok && doc.Format == key.Format && doc.SchemaID == key.ID {
 				return true, nil
 			}
 		}

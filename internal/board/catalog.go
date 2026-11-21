@@ -50,7 +50,7 @@ func (cat catalog) validate(policy accessPolicy) error {
 		if err := doc.validate(policy); err != nil {
 			return err
 		}
-		key := [3]string{doc.Scope, strings.ToLower(doc.Milestone), doc.Name}
+		key := doc.nameKey()
 		if ids[doc.ID] || names[key] || doc.Path <= previous {
 			return fmt.Errorf("duplicate or unordered catalog entry at %q", doc.Path)
 		}
@@ -92,4 +92,8 @@ func displayText(value string, multiline bool) bool {
 		}
 	}
 	return true
+}
+
+func (d document) nameKey() [3]string {
+	return [3]string{d.Scope, strings.ToLower(d.Milestone), d.Name}
 }

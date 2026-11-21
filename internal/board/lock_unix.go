@@ -29,12 +29,16 @@ func lockFile(file *os.File, mode int) error {
 }
 
 func publishBoard(root *os.Root, stage string) error {
+	return renameEntryExclusive(root, stage, boardName)
+}
+
+func renameEntryExclusive(root *os.Root, source, target string) error {
 	dir, err := root.Open(".")
 	if err != nil {
 		return err
 	}
 	defer dir.Close()
-	return renameBoard(int(dir.Fd()), stage)
+	return renameExclusive(int(dir.Fd()), source, target)
 }
 
 func removeEmptyDirectory(root *os.Root, name string) error {

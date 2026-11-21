@@ -172,8 +172,9 @@ func (p accessPolicy) validateAssignee(id, scope string) error {
 }
 
 func (d *Documents) nameTaken(scope, name, milestone, exceptID string) bool {
+	key := (document{Scope: scope, Name: name, Milestone: milestone}).nameKey()
 	return slices.ContainsFunc(d.catalog.Documents, func(entry document) bool {
-		return entry.ID != exceptID && entry.Scope == scope && entry.Name == name && strings.EqualFold(entry.Milestone, milestone)
+		return entry.ID != exceptID && entry.nameKey() == key
 	})
 }
 

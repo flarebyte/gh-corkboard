@@ -198,15 +198,18 @@ func (d *Documents) openUpdateSource(doc document, expected *string, readBytes b
 
 func (doc *document) trackReplacement(current, formatted []byte, explicitStatus bool) *[]byte {
 	changed := !bytes.Equal(current, formatted)
-	digest := revision(formatted)
-	if !explicitStatus && doc.Status == "archived" && (digest != doc.Digest || changed) {
-		doc.Status = "draft"
-	}
-	doc.Digest = digest
+	doc.recordDigest(revision(formatted), changed, explicitStatus)
 	if changed {
 		return &formatted
 	}
 	return nil
+}
+
+func (doc *document) recordDigest(digest string, changed, explicitStatus bool) {
+	if !explicitStatus && doc.Status == "archived" && (digest != doc.Digest || changed) {
+		doc.Status = "draft"
+	}
+	doc.Digest = digest
 }
 
 func currentDocument(scope *os.Root, doc document, readBytes bool) ([]byte, error) {

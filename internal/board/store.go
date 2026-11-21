@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 )
 
 func openRegular(root *os.Root, name string, flags int) (*os.File, error) {
@@ -53,7 +54,7 @@ func replaceFile(root *os.Root, name string, data []byte, mode fs.FileMode) erro
 }
 
 func stageFile(root *os.Root, data []byte, mode fs.FileMode, publish func(string) error) error {
-	temp := ".corkboard-tmp-" + rand.Text()
+	temp := temporaryPrefix + rand.Text()
 	file, err := root.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
 	if err != nil {
 		return err
@@ -92,4 +93,10 @@ func createFile(root *os.Root, name string, data []byte) error {
 
 func readDirectory(root *os.Root) ([]fs.DirEntry, error) {
 	return fs.ReadDir(root.FS(), ".")
+}
+
+const temporaryPrefix = ".corkboard-tmp-"
+
+func isTemporary(name string) bool {
+	return strings.HasPrefix(name, temporaryPrefix)
 }

@@ -2,6 +2,6 @@ package board
 
 import "golang.org/x/sys/unix"
 
-func renameBoard(fd int, stage string) error {
-	return unix.RenameatxNp(fd, stage, fd, boardName, unix.RENAME_EXCL)
+func renameExclusive(fd int, source, target string) error {
+	return unix.RenameatxNp(fd, source, fd, target, unix.RENAME_EXCL)
 }
