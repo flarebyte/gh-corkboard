@@ -68,6 +68,8 @@ _proseNotes: [
 
 			Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document content supplied to a write. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
 
+			Find default text, JSON, raw streams, and representative diagnostics in the [CLI output examples](../design-meta/examples/command-outputs.md).
+
 			```sh
 			gh corkboard --as human:owner init
 			gh corkboard --as human:owner access principal add agent:specs
