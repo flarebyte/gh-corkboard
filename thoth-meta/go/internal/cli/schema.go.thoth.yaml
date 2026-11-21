@@ -1,0 +1,13 @@
+locator: internal/cli/schema.go
+meta:
+  function_list:
+    - schemaCommand
+    - schemaKey
+    - schemaMutation
+  import_files_list:
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+  language: go

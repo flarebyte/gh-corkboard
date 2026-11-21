@@ -1,0 +1,9 @@
+locator: internal/docformat/patch.go
+meta:
+  function_list:
+    - Patch
+  import_files_list:
+    - bytes
+    - errors
+    - fmt
+  language: go

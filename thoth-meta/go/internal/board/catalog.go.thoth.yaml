@@ -1,0 +1,11 @@
+locator: internal/board/catalog.go
+meta:
+  function_list:
+    - displayText
+    - loadCatalog
+  import_files_list:
+    - fmt
+    - os
+    - strings
+    - unicode
+  language: go

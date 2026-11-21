@@ -1,0 +1,12 @@
+locator: internal/board/metadata.go
+meta:
+  function_list: []
+  import_files_list:
+    - embed
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/schema
+    - github.com/flarebyte/gh-corkboard/internal/strictjson
+    - io
+    - os
+  language: go

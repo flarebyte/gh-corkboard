@@ -1,0 +1,19 @@
+locator: internal/cli/doc_search.go
+meta:
+  function_list:
+    - compactDocuments
+    - describeDocuments
+    - docSearchCommand
+    - exactLabel
+    - writeSearch
+  import_files_list:
+    - encoding/csv
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+    - maps
+    - slices
+    - strings
+  language: go

@@ -1,0 +1,8 @@
+locator: internal/docformat/json_merge.go
+meta:
+  function_list:
+    - mergeJSON
+    - mergeValue
+  import_files_list:
+    - fmt
+  language: go

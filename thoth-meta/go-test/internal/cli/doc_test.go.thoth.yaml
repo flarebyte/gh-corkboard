@@ -1,0 +1,17 @@
+locator: internal/cli/doc_test.go
+meta:
+  function_list:
+    - TestDocumentDiscoveryAndPermissions
+    - TestDocumentRoundTrip
+  import_files_list:
+    - bytes
+    - crypto/sha256
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - os
+    - path/filepath
+    - strings
+    - testing
+  language: go

@@ -1,0 +1,17 @@
+locator: internal/docformat/projection.go
+meta:
+  function_list:
+    - ErrorPosition
+    - Project
+    - positionAt
+    - projectCSV
+  import_files_list:
+    - bytes
+    - encoding/json
+    - errors
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/strictjson
+    - slices
+    - strconv
+    - unicode/utf8
+  language: go

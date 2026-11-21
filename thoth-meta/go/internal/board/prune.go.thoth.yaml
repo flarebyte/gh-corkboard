@@ -1,0 +1,16 @@
+locator: internal/board/prune.go
+meta:
+  function_list:
+    - ValidatePlanID
+    - comparePruneFile
+    - pruneIDs
+  import_files_list:
+    - cmp
+    - crypto/sha256
+    - errors
+    - fmt
+    - os
+    - path
+    - slices
+    - strings
+  language: go

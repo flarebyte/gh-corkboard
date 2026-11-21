@@ -1,0 +1,13 @@
+locator: internal/board/search.go
+meta:
+  function_list:
+    - compareDocuments
+    - matchFilter
+    - validFilter
+    - validLabel
+  import_files_list:
+    - cmp
+    - fmt
+    - slices
+    - strings
+  language: go

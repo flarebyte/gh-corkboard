@@ -1,0 +1,10 @@
+locator: cmd/gh-corkboard/main_test.go
+meta:
+  function_list:
+    - TestRunHelp
+  import_files_list:
+    - bytes
+    - github.com/flarebyte/gh-corkboard/internal/cli
+    - strings
+    - testing
+  language: go

@@ -1,0 +1,21 @@
+locator: internal/board/document_update.go
+meta:
+  function_list:
+    - ValidateRevision
+    - checkRevision
+    - currentDocument
+    - validReviewComment
+  import_files_list:
+    - bytes
+    - errors
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/docformat
+    - io
+    - maps
+    - os
+    - path
+    - regexp
+    - slices
+    - strings
+    - unicode/utf8
+  language: go

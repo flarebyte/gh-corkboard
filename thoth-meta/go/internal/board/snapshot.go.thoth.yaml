@@ -1,0 +1,16 @@
+locator: internal/board/snapshot.go
+meta:
+  function_list:
+    - archiveDirectory
+    - archiveFile
+    - safeArchiveName
+  import_files_list:
+    - archive/zip
+    - errors
+    - fmt
+    - io
+    - os
+    - path
+    - strings
+    - unicode/utf8
+  language: go

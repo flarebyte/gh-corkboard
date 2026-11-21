@@ -1,0 +1,15 @@
+locator: internal/board/schemas.go
+meta:
+  function_list:
+    - compileSchema
+  import_files_list:
+    - errors
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/docformat
+    - github.com/flarebyte/gh-corkboard/internal/schema
+    - github.com/flarebyte/gh-corkboard/internal/strictjson
+    - github.com/santhosh-tekuri/jsonschema/v6
+    - io
+    - os
+    - strings
+  language: go

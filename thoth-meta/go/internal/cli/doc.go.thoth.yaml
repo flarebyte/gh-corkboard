@@ -1,0 +1,15 @@
+locator: internal/cli/doc.go
+meta:
+  function_list:
+    - createCommand
+    - deleteCommand
+    - docCommand
+    - getCommand
+    - locateCommand
+  import_files_list:
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+  language: go

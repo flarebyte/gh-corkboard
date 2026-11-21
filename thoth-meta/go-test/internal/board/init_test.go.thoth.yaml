@@ -1,0 +1,16 @@
+locator: internal/board/init_test.go
+meta:
+  function_list:
+    - TestConcurrentInit
+    - TestInitFromNestedDirectory
+    - TestInitRejectsUnsafeOrDamagedBoard
+    - TestInitRetryAroundPublication
+    - TestLinkedWorktreeIsolation
+  import_files_list:
+    - errors
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - os
+    - path/filepath
+    - strings
+    - testing
+  language: go

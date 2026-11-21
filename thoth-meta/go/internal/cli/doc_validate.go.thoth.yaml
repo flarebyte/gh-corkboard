@@ -1,0 +1,16 @@
+locator: internal/cli/doc_validate.go
+meta:
+  function_list:
+    - docValidateCommand
+    - reportValidation
+    - singleLine
+  import_files_list:
+    - encoding/json
+    - errors
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+    - strings
+    - unicode
+  language: go

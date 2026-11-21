@@ -1,0 +1,12 @@
+locator: internal/board/documents_unix_test.go
+meta:
+  function_list:
+    - TestDocumentRejectsNonRegularPaths
+  import_files_list:
+    - golang.org/x/sys/unix
+    - io
+    - os
+    - path/filepath
+    - strings
+    - testing
+  language: go

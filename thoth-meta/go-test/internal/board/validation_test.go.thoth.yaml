@@ -1,0 +1,14 @@
+locator: internal/board/validation_test.go
+meta:
+  function_list:
+    - TestAccessValidation
+    - TestCatalogValidatesDerivedPaths
+    - TestInitRejectsSymlinkedPolicy
+    - testIndex
+  import_files_list:
+    - bytes
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - os
+    - path/filepath
+    - testing
+  language: go

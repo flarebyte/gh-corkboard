@@ -37,3 +37,18 @@ Update the [README](README.md) when setup or user workflows change. Keep the [de
 flyb validate --config doc/design-meta
 flyb generate markdown --config doc/design-meta
 ```
+
+## Refreshing Go metadata
+
+The two root-level Go pipelines are managed by [the Arrow sync manifest](sync.gh-arrow.cue). Use Arrow 0.3.0 or newer and run these commands from the repository root.
+
+```sh
+gh arrow sync diff
+gh arrow sync
+gh arrow sync check
+gh flarebyte meta
+```
+
+Arrow uses the configured GitHub mapping for `flarebyte:baldrick-reserve` when one exists. Point that mapping at a Reserve checkout containing `shared/go/all/` using the [Arrow configuration format](https://github.com/flarebyte/gh-arrow/blob/main/doc/design-meta/examples/config.cue). Arrow otherwise reads the repository's default branch. Review the diff before syncing because sync replaces changed pipeline files.
+
+Metadata generation requires `thoth`, `maat`, Node.js 24 or later, and `npx`. The shared pipelines invoke `npx maat-ostraca`, which may need npm registry access. YAML goes under `thoth-meta/` and debug JSON under `temp/`. Since the pipelines keep going after analysis errors, inspect the debug reports when checking a run.

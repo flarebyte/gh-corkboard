@@ -1,0 +1,11 @@
+locator: internal/cli/root_test.go
+meta:
+  function_list:
+    - TestHelpAndVersionOutsideGit
+    - TestInitJSON
+  import_files_list:
+    - bytes
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - strings
+    - testing
+  language: go

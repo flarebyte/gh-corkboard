@@ -1,0 +1,13 @@
+locator: internal/board/document_validation.go
+meta:
+  function_list: []
+  import_files_list:
+    - errors
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/docformat
+    - github.com/flarebyte/gh-corkboard/internal/schema
+    - github.com/santhosh-tekuri/jsonschema/v6
+    - io
+    - os
+    - slices
+  language: go

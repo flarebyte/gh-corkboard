@@ -1,0 +1,14 @@
+locator: internal/cli/index.go
+meta:
+  function_list:
+    - describeIndexFindings
+    - describeResync
+    - indexCommand
+  import_files_list:
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+    - strings
+  language: go

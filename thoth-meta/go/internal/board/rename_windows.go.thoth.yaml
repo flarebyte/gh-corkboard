@@ -1,0 +1,9 @@
+locator: internal/board/rename_windows.go
+meta:
+  function_list:
+    - renameEntryExclusive
+  import_files_list:
+    - golang.org/x/sys/windows
+    - os
+    - unsafe
+  language: go

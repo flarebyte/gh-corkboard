@@ -1,0 +1,15 @@
+locator: internal/cli/access.go
+meta:
+  function_list:
+    - accessCommand
+    - accessExample
+    - accessTable
+  import_files_list:
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+    - strings
+    - text/tabwriter
+  language: go

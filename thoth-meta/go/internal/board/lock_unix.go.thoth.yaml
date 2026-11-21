@@ -1,0 +1,16 @@
+locator: internal/board/lock_unix.go
+meta:
+  function_list:
+    - lockExclusive
+    - lockFile
+    - lockShared
+    - publishBoard
+    - removeDocumentFile
+    - removeEmptyDirectory
+    - renameEntryExclusive
+    - unlink
+  import_files_list:
+    - errors
+    - golang.org/x/sys/unix
+    - os
+  language: go

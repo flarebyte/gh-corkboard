@@ -1,0 +1,11 @@
+locator: internal/board/resync.go
+meta:
+  function_list:
+    - newResyncResult
+  import_files_list:
+    - errors
+    - fmt
+    - os
+    - path
+    - strings
+  language: go

@@ -1,0 +1,21 @@
+locator: internal/board/init.go
+meta:
+  function_list:
+    - Init
+    - ensureIgnored
+    - initBoard
+    - prepareBoard
+    - readIgnore
+    - reinitialize
+    - writeMetadata
+  import_files_list:
+    - bytes
+    - crypto/rand
+    - encoding/json
+    - errors
+    - fmt
+    - io
+    - os
+    - os/exec
+    - strings
+  language: go

@@ -1,0 +1,18 @@
+locator: internal/board/access_test.go
+meta:
+  function_list:
+    - TestAccessPermissionMatrix
+    - TestAccessRejectsInvalidPolicyChanges
+    - TestTopicDeletionChecksFolderAndIndex
+    - TestTopicRetryAfterFolderChange
+    - accessFixture
+    - editAccess
+  import_files_list:
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - os
+    - path/filepath
+    - reflect
+    - strings
+    - testing
+  language: go

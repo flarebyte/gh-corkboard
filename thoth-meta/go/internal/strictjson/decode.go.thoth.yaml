@@ -1,0 +1,16 @@
+locator: internal/strictjson/decode.go
+meta:
+  function_list:
+    - Decode
+    - readValue
+    - unicodeEscape
+    - validSurrogates
+  import_files_list:
+    - bytes
+    - encoding/json
+    - errors
+    - fmt
+    - io
+    - strconv
+    - unicode/utf8
+  language: go
