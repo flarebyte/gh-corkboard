@@ -18,7 +18,7 @@ func archivedFixture(t *testing.T, names ...string) (string, string, PrunePlan) 
 	if err := WithDocuments(dir, owner, true, func(d *Documents) error {
 		status := "archived"
 		for _, name := range names {
-			if _, err := d.Create(CreateOptions{Scope: reconcileScope, Name: name, Format: "md", Status: &status}, strings.NewReader(name)); err != nil {
+			if _, err := d.Create(CreateOptions{Scope: reconcileScope, Name: name, Format: "md", Status: &status}, []byte(name)); err != nil {
 				return err
 			}
 		}

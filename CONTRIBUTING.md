@@ -2,7 +2,7 @@
 
 ## Local setup
 
-Use Go 1.26 or later, Git, and GitHub CLI. For the standard checks, install the [gh-flarebyte extension](https://github.com/flarebyte/gh-flarebyte) with `lint`, `test`, `cc`, and `build` support, and make `jscpd` available on your PATH for duplicate-code detection.
+Use Go 1.26.11 or later, Git, and GitHub CLI. For the standard checks, install the [gh-flarebyte extension](https://github.com/flarebyte/gh-flarebyte) with `lint`, `test`, `cc`, and `build` support, and make `jscpd` available on your PATH for duplicate-code detection.
 
 From the repository root, use the [source installation steps](README.md#install-from-source) to run Corkboard through GitHub CLI. For a quick check of the entry point, run `go run ./cmd/gh-corkboard --help`. Exercise commands that write board data in a disposable Git worktree so your own board stays available.
 
@@ -51,7 +51,7 @@ gh flarebyte meta
 
 Arrow uses the configured GitHub mapping for `flarebyte:baldrick-reserve` when one exists. Point that mapping at a Reserve checkout containing `shared/go/all/` using the [Arrow configuration format](https://github.com/flarebyte/gh-arrow/blob/main/doc/design-meta/examples/config.cue). Arrow otherwise reads the repository's default branch. Review the diff before syncing because sync replaces changed pipeline files.
 
-Metadata generation requires `thoth`, `maat`, Node.js 24 or later, and `npx`. The shared pipelines invoke `npx maat-ostraca`, which may need npm registry access. YAML goes under `thoth-meta/` and debug JSON under `temp/`. Since the pipelines keep going after analysis errors, inspect the debug reports when checking a run.
+Metadata generation requires `thoth`, `maat`, Node.js 24 or later, and `npx`. The shared pipelines invoke `npx maat-ostraca@0.9.0`, which may need npm registry access. YAML goes under `thoth-meta/` and debug JSON under `temp/`. Since the pipelines keep going after analysis errors, inspect the debug reports when checking a run.
 
 ## GitHub Actions
 

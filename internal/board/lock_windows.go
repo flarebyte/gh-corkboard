@@ -1,9 +1,7 @@
 package board
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"golang.org/x/sys/windows"
 )
@@ -24,30 +22,29 @@ func lockFile(file *os.File, flags uint32) error {
 }
 
 func publishBoard(root *os.Root, stage string) error {
-	source, err := windows.UTF16PtrFromString(filepath.Join(root.Name(), stage))
-	if err != nil {
-		return err
-	}
-	target, err := windows.UTF16PtrFromString(filepath.Join(root.Name(), boardName))
-	if err != nil {
-		return err
-	}
-	return windows.MoveFile(source, target)
+	return renameChildExclusive(root, stage, boardName, windows.FILE_DIRECTORY_FILE)
 }
 
 func removeEmptyDirectory(root *os.Root, name string) error {
-	info, err := root.Lstat(name)
+	parent, err := root.Open(".")
 	if err != nil {
 		return err
 	}
-	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory", name)
-	}
-	target, err := windows.UTF16PtrFromString(filepath.Join(root.Name(), name))
+	defer parent.Close()
+	child, err := openChildForDelete(windows.Handle(parent.Fd()), name, windows.FILE_DIRECTORY_FILE)
 	if err != nil {
 		return err
 	}
-	return windows.RemoveDirectory(target)
+
+	// The kernel enforces directory emptiness on the opened handle.
+	var status windows.IO_STATUS_BLOCK
+	deleteOnClose := byte(1)
+	err = windows.NtSetInformationFile(child, &status, &deleteOnClose, 1, windows.FileDispositionInformation)
+	closeErr := windows.CloseHandle(child)
+	if err != nil {
+		return windowsError(err)
+	}
+	return closeErr
 }
 
 func removeDocumentFile(root *os.Root, name string) error {

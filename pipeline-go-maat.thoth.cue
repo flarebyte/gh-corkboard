@@ -29,15 +29,13 @@
   shell: {
     enabled: true
     decodeJsonStdout: true
-    program: "/bin/sh"
+    // Keep the locator in a positional argument, outside shell source.
+    program: "sh"
     workingDir: "."
     argsTemplate: [
       "-c",
-      "npx maat-ostraca analyse " +
-      "--in '{locator}' " +
-      "--rules 'import_files_list,function_map' " +
-      "--language go " +
-      "--json",
+      "exec npx --yes maat-ostraca@0.9.0 analyse --in=\"$1\" --rules import_files_list,function_map --language go --json",
+      "thoth-maat", "{locator}",
     ]
   }
 

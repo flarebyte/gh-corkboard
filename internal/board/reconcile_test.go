@@ -164,7 +164,7 @@ func TestMissingIndexCannotInferMilestoneNamespaces(t *testing.T) {
 	dir, scope := reconcileFixture(t)
 	if err := WithDocuments(dir, owner, true, func(d *Documents) error {
 		for _, milestone := range []string{"v1", "v2"} {
-			if _, err := d.Create(CreateOptions{Scope: reconcileScope, Name: "review", Format: "md", Milestone: milestone}, strings.NewReader(milestone)); err != nil {
+			if _, err := d.Create(CreateOptions{Scope: reconcileScope, Name: "review", Format: "md", Milestone: milestone}, []byte(milestone)); err != nil {
 				return err
 			}
 		}

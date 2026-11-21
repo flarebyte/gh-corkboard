@@ -101,7 +101,7 @@ func validateDocumentLabels(description, milestone, concept string) error {
 	return nil
 }
 
-func (d *Documents) Create(o CreateOptions, input io.Reader) (DocumentMetadata, error) {
+func (d *Documents) Create(o CreateOptions, input []byte) (DocumentMetadata, error) {
 	var empty DocumentMetadata
 	o.Milestone, o.Concept = strings.TrimSpace(o.Milestone), strings.TrimSpace(o.Concept)
 	if err := o.validate(); err != nil {
@@ -134,11 +134,7 @@ func (d *Documents) Create(o CreateOptions, input io.Reader) (DocumentMetadata, 
 		return empty, errors.New("--in, --name, and --schema produce a path longer than 244 bytes")
 	}
 
-	data, err := io.ReadAll(input)
-	if err != nil {
-		return empty, err
-	}
-	formatted, err := docformat.Format(o.Format, data, o.PreserveRowOrder)
+	formatted, err := docformat.Format(o.Format, input, o.PreserveRowOrder)
 	if err != nil {
 		return empty, err
 	}

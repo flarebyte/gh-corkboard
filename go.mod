@@ -1,6 +1,6 @@
 module github.com/flarebyte/gh-corkboard
 
-go 1.26.0
+go 1.26.11
 
 require (
 	github.com/bluekeyes/go-gitdiff v0.9.0

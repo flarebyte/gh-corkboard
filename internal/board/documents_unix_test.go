@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"golang.org/x/sys/unix"
@@ -18,7 +17,7 @@ func TestDocumentRejectsNonRegularPaths(t *testing.T) {
 	var created DocumentMetadata
 	err := WithDocuments(root, owner, true, func(d *Documents) error {
 		var err error
-		created, err = d.Create(CreateOptions{Scope: "topic:specs", Name: "notes", Format: "md"}, strings.NewReader("notes"))
+		created, err = d.Create(CreateOptions{Scope: "topic:specs", Name: "notes", Format: "md"}, []byte("notes"))
 		return err
 	})
 	if err != nil {

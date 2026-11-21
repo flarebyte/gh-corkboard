@@ -16,12 +16,14 @@ func docCommand(actor *string, jsonOutput *bool) *cobra.Command {
 	return group
 }
 
+const maxCreateBytes = 32 << 20
+
 func createCommand(actor *string, jsonOutput *bool) *cobra.Command {
 	var o board.CreateOptions
 	var status string
 	cmd := &cobra.Command{
 		Use: "create", Short: "Create an indexed document",
-		Long:    "Create an indexed document from stdin. Requires scope write permission and status permission when --status is supplied.",
+		Long:    "Create an indexed document from stdin (up to 32 MiB). Requires scope write permission and status permission when --status is supplied.",
 		Example: "  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md < pagination.md",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -31,10 +33,17 @@ func createCommand(actor *string, jsonOutput *bool) *cobra.Command {
 			if cmd.Flags().Changed("status") {
 				o.Status = &status
 			}
+			input, err := io.ReadAll(io.LimitReader(cmd.InOrStdin(), maxCreateBytes+1))
+			if err != nil {
+				return err
+			}
+			if len(input) > maxCreateBytes {
+				return fmt.Errorf("doc create input exceeds 32 MiB")
+			}
 			var result board.DocumentMetadata
-			err := board.WithDocuments("", *actor, true, func(d *board.Documents) error {
+			err = board.WithDocuments("", *actor, true, func(d *board.Documents) error {
 				var err error
-				result, err = d.Create(o, cmd.InOrStdin())
+				result, err = d.Create(o, input)
 				return err
 			})
 			if err != nil {

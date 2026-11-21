@@ -2,9 +2,20 @@
 
 Corkboard is a GitHub CLI extension for keeping essential notes in a Git worktree. Humans and agents sharing a checkout can publish handoffs, record progress and reviews, and find related Markdown, JSON, and CSV documents by milestone or concept. Each document has a stable UUID you can use in a handoff or review.
 
+## Install with GitHub CLI
+
+With GitHub CLI (`gh`) installed, run these commands from any directory. GitHub CLI can install Corkboard without a source checkout or Go when the latest published release includes a binary for your platform. The release workflow builds binaries for macOS arm64, Linux amd64, and Windows amd64. See the [release assets](https://github.com/flarebyte/gh-corkboard/releases).
+
+```sh
+gh extension install flarebyte/gh-corkboard
+gh corkboard --version
+```
+
+If GitHub CLI asks you to authenticate, run `gh auth login` and retry. If a release binary is unavailable for your platform, use the source installation below.
+
 ## Install from source
 
-You need Git, GitHub CLI (`gh`), and Go 1.26 or later. From the root of the Corkboard source checkout named `gh-corkboard`, build the executable and register it as a local extension. Go names the executable `gh-corkboard.exe` on Windows.
+You need Git, GitHub CLI (`gh`), and Go 1.26.11 or later. From the root of the Corkboard source checkout named `gh-corkboard`, build the executable and register it as a local extension. Go names the executable `gh-corkboard.exe` on Windows.
 
 ```sh
 go build ./cmd/gh-corkboard
