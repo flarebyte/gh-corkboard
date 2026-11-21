@@ -31,7 +31,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var jsonOutput bool
 	root.PersistentFlags().StringVar(&actor, "as", "", "Select the caller for a board command")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Emit JSON for supported results")
-	root.AddCommand(initCommand(&actor, &jsonOutput))
+	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput))
 	var helpTarget *cobra.Command
 	root.SetHelpCommand(&cobra.Command{
 		Use:   "help [<command> ...]",

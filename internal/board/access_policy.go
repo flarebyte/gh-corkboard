@@ -43,51 +43,54 @@ func loadAccess(index *os.Root) (accessPolicy, error) {
 		return policy, fmt.Errorf("invalid access policy: %w", err)
 	}
 
+	return policy, policy.validate()
+}
+
+func (policy accessPolicy) validate() error {
 	roles := map[string]string{}
 	hasAdmin := false
-	for i, entry := range policy.Principals {
+	for _, entry := range policy.Principals {
 		kind, _, valid := principalParts(entry.ID)
 		if !valid || roles[entry.ID] != "" || (entry.Role == "admin" && kind != "human") {
-			return policy, fmt.Errorf("invalid or duplicate principal %q", entry.ID)
+			return fmt.Errorf("invalid or duplicate principal %q", entry.ID)
 		}
 		if entry.Role == "" {
 			entry.Role = "member"
 		}
 		hasAdmin = hasAdmin || entry.Role == "admin"
 		roles[entry.ID] = entry.Role
-		policy.Principals[i] = entry
 	}
 	if !hasAdmin {
-		return policy, fmt.Errorf("access policy needs a human administrator")
+		return fmt.Errorf("access policy needs a human administrator")
 	}
 
 	for _, topic := range policy.Topics {
 		if !validSlug(topic) {
-			return policy, fmt.Errorf("invalid topic %q", topic)
+			return fmt.Errorf("invalid topic %q", topic)
 		}
 	}
 	seen := make(map[[2]string]bool)
 	for _, g := range policy.Grants {
 		key := [2]string{g.Scope, g.Principal}
 		if !policy.hasScope(g.Scope) || roles[g.Principal] == "" || seen[key] {
-			return policy, fmt.Errorf("invalid or duplicate grant for %q in %q", g.Principal, g.Scope)
+			return fmt.Errorf("invalid or duplicate grant for %q in %q", g.Principal, g.Scope)
 		}
 		seen[key] = true
 		if !strings.HasPrefix(g.Scope, "topic:") {
 			for _, permission := range g.Permissions {
 				if permission != "read" && permission != "status" {
-					return policy, fmt.Errorf("invalid private scope permission %q", permission)
+					return fmt.Errorf("invalid private scope permission %q", permission)
 				}
 			}
 		}
 	}
-	return policy, nil
+	return nil
 }
 
 func (p accessPolicy) role(id string) string {
 	for _, entry := range p.Principals {
 		if entry.ID == id {
-			return entry.Role
+			return entry.effectiveRole()
 		}
 	}
 	return ""
@@ -104,4 +107,11 @@ func (p accessPolicy) hasScope(scope string) bool {
 		return false
 	}
 	return (kind == "agent" || kind == "skill") && p.role(scope) != ""
+}
+
+func (p principal) effectiveRole() string {
+	if p.Role == "" {
+		return "member"
+	}
+	return p.Role
 }

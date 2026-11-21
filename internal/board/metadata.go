@@ -28,6 +28,11 @@ func metadata[T any](root *os.Root, name string, limit int) (T, error) {
 	if err != nil {
 		return result, err
 	}
+	return decodeMetadata[T](name, data, limit)
+}
+
+func decodeMetadata[T any](name string, data []byte, limit int) (T, error) {
+	var result T
 	if len(data) > limit {
 		return result, fmt.Errorf("%s exceeds %d bytes", name, limit)
 	}
