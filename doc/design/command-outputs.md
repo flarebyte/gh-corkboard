@@ -92,7 +92,7 @@ example_help_doc_patch() {
 example_help_index_search() {
   gh corkboard help index search
   # Expected stdout
-  # Search readable indexed documents. Requires a registered principal.
+  # Search indexed documents in accessible scopes. Admins can search across the board.
   #
   # Usage
   #   gh corkboard --as <principal> index search [flags]
@@ -782,6 +782,14 @@ example_index_search_csv() {
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
 }
 
+# index search (inaccessible scope)
+# The pagination review exists in agent:test. The specs agent has no permission there.
+example_index_search_inaccessible_scope() {
+  gh corkboard --as agent:specs index search --in agent:test
+  # Expected stdout
+  # No documents matched.
+}
+
 # index audit
 example_index_audit() {
   gh corkboard --as human:owner index audit
@@ -874,6 +882,9 @@ example_snapshot_create() {
           }
         }
       ]
+    },
+    "index search (inaccessible scope)": {
+      "documents": []
     },
     "index audit": {
       "findings": []

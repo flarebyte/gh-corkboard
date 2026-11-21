@@ -25,6 +25,9 @@
         }
       ]
     },
+    "index search (inaccessible scope)": {
+      "documents": []
+    },
     "index audit": {
       "findings": []
     },

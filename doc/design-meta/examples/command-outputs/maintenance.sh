@@ -36,6 +36,14 @@ example_index_search_csv() {
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
 }
 
+# index search (inaccessible scope)
+# The pagination review exists in agent:test. The specs agent has no permission there.
+example_index_search_inaccessible_scope() {
+  gh corkboard --as agent:specs index search --in agent:test
+  # Expected stdout
+  # No documents matched.
+}
+
 # index audit
 example_index_audit() {
   gh corkboard --as human:owner index audit

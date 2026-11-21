@@ -81,7 +81,7 @@ example_help_doc_patch() {
 example_help_index_search() {
   gh corkboard help index search
   # Expected stdout
-  # Search readable indexed documents. Requires a registered principal.
+  # Search indexed documents in accessible scopes. Admins can search across the board.
   #
   # Usage
   #   gh corkboard --as <principal> index search [flags]
