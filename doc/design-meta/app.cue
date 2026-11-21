@@ -11,6 +11,12 @@ reports: [{
 	filepath:    "../design/corkboard.md"
 	description: "Proposed specification for a local project corkboard and messaging system."
 	sections: [{
+		title: "Access control"
+		sections: [{
+			title: "Principals and permissions"
+			notes: ["board.access"]
+		}]
+	}, {
 		title: "Board and communication"
 		sections: [{
 			title: "Workspace"

@@ -1,5 +1,6 @@
 id,description,parent
 board,Local project corkboard,
+board.access,Principals and scope permissions,board
 board.cli,Go extension command interface,board
 board.communication,Agent handoffs self-notes and human review,board
 board.documents,Document formats names and lifecycle,board
