@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	project "github.com/flarebyte/gh-corkboard"
 	"github.com/flarebyte/gh-corkboard/internal/board"
 	"github.com/flarebyte/gh-corkboard/internal/docformat"
 	"github.com/spf13/cobra"
@@ -20,7 +21,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		Example:       "  gh corkboard --as human:owner init\n  gh corkboard help init",
 		SilenceErrors: true, SilenceUsage: true,
 		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
-		Version:           "0.1.0",
+		Version:           project.Version,
 		RunE:              func(cmd *cobra.Command, args []string) error { return cmd.Help() },
 		Args:              cobra.NoArgs,
 	}

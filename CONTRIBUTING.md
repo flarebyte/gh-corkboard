@@ -52,3 +52,9 @@ gh flarebyte meta
 Arrow uses the configured GitHub mapping for `flarebyte:baldrick-reserve` when one exists. Point that mapping at a Reserve checkout containing `shared/go/all/` using the [Arrow configuration format](https://github.com/flarebyte/gh-arrow/blob/main/doc/design-meta/examples/config.cue). Arrow otherwise reads the repository's default branch. Review the diff before syncing because sync replaces changed pipeline files.
 
 Metadata generation requires `thoth`, `maat`, Node.js 24 or later, and `npx`. The shared pipelines invoke `npx maat-ostraca`, which may need npm registry access. YAML goes under `thoth-meta/` and debug JSON under `temp/`. Since the pipelines keep going after analysis errors, inspect the debug reports when checking a run.
+
+## GitHub Actions
+
+The [build workflow](.github/workflows/build.yml) runs Go vet, tests, and a configured Linux amd64 build using the standalone Flarebyte builder. Its job reports the `CI passed` check.
+
+To publish a release, set a new stable version in [main.project.yaml](main.project.yaml), then run **Manual release** in GitHub Actions on the default branch. The [release workflow](.github/workflows/release.yml) tests the selected commit, builds the configured extension binaries and archives with Flarebyte, and verifies their SHA-256 manifest before uploading. The executable embeds the version from `main.project.yaml`, which the release workflow reads to name the tag. It creates the `v`-prefixed tag at the tested commit and publishes the release with generated notes. If publishing is interrupted, check GitHub Releases for the draft and verify the tag before retrying.
