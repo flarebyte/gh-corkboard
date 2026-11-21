@@ -1,0 +1,41 @@
+{
+  "jsonStdout": {
+    "schema create": {
+      "format": "json",
+      "schemaId": "spec",
+      "created": true
+    },
+    "schema list": {
+      "schemas": [
+        {
+          "format": "json",
+          "schemaId": "spec"
+        }
+      ]
+    },
+    "schema update": {
+      "format": "json",
+      "schemaId": "spec",
+      "updated": true
+    },
+    "schema delete": {
+      "format": "json",
+      "schemaId": "spec",
+      "deleted": true
+    }
+  },
+  "rawStdout": {
+    "schema get": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "type": "object"
+    }
+  }
+}

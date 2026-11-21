@@ -1,0 +1,37 @@
+{
+  "jsonStdout": {
+    "doc validate (schema violation)": {
+      "results": [
+        {
+          "id": "ae3f039f-33f8-4906-99e5-43e0f21095c2",
+          "format": "json",
+          "schemaId": "spec",
+          "state": "invalid",
+          "diagnostics": [
+            {
+              "code": "schema_required",
+              "message": "Required property \"title\" is missing.",
+              "instancePath": ""
+            }
+          ]
+        }
+      ]
+    },
+    "index audit (drift)": {
+      "findings": [
+        {
+          "code": "unindexed_document",
+          "path": "agents/test/local-results.csv"
+        }
+      ]
+    },
+    "doc create (malformed input)": {
+      "diagnostics": [
+        {
+          "code": "invalid_json",
+          "message": "Unexpected end of input."
+        }
+      ]
+    }
+  }
+}

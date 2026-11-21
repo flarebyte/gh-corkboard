@@ -1,0 +1,49 @@
+{
+  "jsonStdout": {
+    "doc create": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Requirements for cursor pagination",
+      "status": "active",
+      "reviewComments": {}
+    },
+    "doc locate": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb"
+    },
+    "doc update": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Requirements for cursor pagination",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
+      }
+    },
+    "doc delete": {
+      "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
+      "deleted": true
+    },
+    "doc validate": {
+      "results": [
+        {
+          "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+          "format": "md",
+          "state": "schemaless",
+          "diagnostics": []
+        }
+      ]
+    }
+  }
+}

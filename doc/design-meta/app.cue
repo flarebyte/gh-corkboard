@@ -59,7 +59,7 @@ reports: [{
 			notes: ["board.concepts"]
 		}]
 	}]
-}]
+}, _commandOutputReport]
 
 notes: list.Concat([[
 	{name: "board.access.policy-example", title: "Access policy example", filepath: "examples/access-policy.json"},
@@ -74,4 +74,4 @@ notes: list.Concat([[
 	{name: "board.access.permissions", title: "Permissions by scope", filepath: "examples/scope-permissions.csv"},
 	{name: "board.usecases", title: "Core workflows", filepath: "examples/usecases.csv"},
 	{name: "board.validation.formats", title: "Validation inputs by format", filepath: "examples/validation-inputs.csv"},
-], _proseNotes])
+], _proseNotes, _commandOutputNotes])

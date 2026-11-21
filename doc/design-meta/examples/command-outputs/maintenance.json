@@ -1,0 +1,59 @@
+{
+  "jsonStdout": {
+    "index search": {
+      "documents": [
+        {
+          "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+          "scope": "topic:specs",
+          "name": "pagination",
+          "format": "md",
+          "description": "Requirements for cursor pagination",
+          "status": "approved",
+          "reviewComments": {
+            "agent:specs": {
+              "comment": "Acceptance criteria cover the edge cases.",
+              "status": "pass"
+            },
+            "agent:test": {
+              "comment": "The test plan covers every criterion.",
+              "status": "pass",
+              "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+            }
+          }
+        }
+      ]
+    },
+    "index audit": {
+      "findings": []
+    },
+    "index resync": {
+      "added": [
+        {
+          "id": "7ee9c97c-dcbb-4355-898a-2fbb18868362",
+          "path": "agents/test/local-results.csv",
+          "status": "draft"
+        }
+      ],
+      "removed": [],
+      "updated": [],
+      "resetToDraft": []
+    },
+    "index prune": {
+      "planId": "c7f4494f4450f8616639b3d733ab7257407c2d5f43adf751bfc8b0d2f12f07b3",
+      "candidates": [
+        {
+          "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+          "path": "topics/specs/pagination.md"
+        }
+      ],
+      "skipped": []
+    },
+    "index prune --apply": {
+      "planId": "c7f4494f4450f8616639b3d733ab7257407c2d5f43adf751bfc8b0d2f12f07b3",
+      "deleted": [
+        "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb"
+      ],
+      "remaining": []
+    }
+  }
+}
