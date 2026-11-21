@@ -49,3 +49,7 @@ func removeEmptyDirectory(root *os.Root, name string) error {
 	}
 	return windows.RemoveDirectory(target)
 }
+
+func removeDocumentFile(root *os.Root, name string) error {
+	return root.Remove(name)
+}

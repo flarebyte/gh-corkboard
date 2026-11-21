@@ -38,10 +38,18 @@ func publishBoard(root *os.Root, stage string) error {
 }
 
 func removeEmptyDirectory(root *os.Root, name string) error {
+	return unlink(root, name, unix.AT_REMOVEDIR)
+}
+
+func removeDocumentFile(root *os.Root, name string) error {
+	return unlink(root, name, 0)
+}
+
+func unlink(root *os.Root, name string, flags int) error {
 	parent, err := root.Open(".")
 	if err != nil {
 		return err
 	}
 	defer parent.Close()
-	return unix.Unlinkat(int(parent.Fd()), name, unix.AT_REMOVEDIR)
+	return unix.Unlinkat(int(parent.Fd()), name, flags)
 }

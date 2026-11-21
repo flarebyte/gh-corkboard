@@ -20,6 +20,15 @@ type Access struct {
 
 // WithAccess keeps authorization and the operation under the same board lock.
 func WithAccess(dir, actor string, edit bool, operation func(*Access) error) error {
+	return withBoard(dir, actor, edit, func(a *Access) error {
+		if edit && a.policy.role(actor) != "admin" {
+			return errors.New("operation requires a board administrator")
+		}
+		return operation(a)
+	})
+}
+
+func withBoard(dir, actor string, edit bool, operation func(*Access) error) error {
 	if _, _, valid := principalParts(actor); !valid {
 		return errors.New("a registered --as <principal> is required")
 	}
@@ -62,9 +71,6 @@ func WithAccess(dir, actor string, edit bool, operation func(*Access) error) err
 	role := policy.role(actor)
 	if role == "" {
 		return fmt.Errorf("unregistered principal %q", actor)
-	}
-	if edit && role != "admin" {
-		return errors.New("operation requires a board administrator")
 	}
 	return operation(&Access{root: root, index: index, policy: policy, actor: actor, edit: edit})
 }

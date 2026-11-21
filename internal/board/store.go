@@ -49,6 +49,10 @@ func openDirectory(root *os.Root, name string) (*os.Root, error) {
 }
 
 func replaceFile(root *os.Root, name string, data []byte, mode fs.FileMode) error {
+	return stageFile(root, data, mode, func(temp string) error { return root.Rename(temp, name) })
+}
+
+func stageFile(root *os.Root, data []byte, mode fs.FileMode, publish func(string) error) error {
 	temp := ".corkboard-tmp-" + rand.Text()
 	file, err := root.OpenFile(temp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
 	if err != nil {
@@ -63,7 +67,7 @@ func replaceFile(root *os.Root, name string, data []byte, mode fs.FileMode) erro
 	if closeErr != nil {
 		return closeErr
 	}
-	return root.Rename(temp, name)
+	return publish(temp)
 }
 
 func openLock(root *os.Root, name string) (*os.File, error) {
@@ -79,4 +83,9 @@ func openLock(root *os.Root, name string) (*os.File, error) {
 		return nil, err
 	}
 	return file, nil
+}
+
+// createFile publishes complete bytes while refusing to overwrite an existing name.
+func createFile(root *os.Root, name string, data []byte) error {
+	return stageFile(root, data, 0600, func(temp string) error { return root.Link(temp, name) })
 }

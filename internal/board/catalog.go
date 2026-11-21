@@ -39,20 +39,24 @@ func loadCatalog(index *os.Root, policy accessPolicy) (catalog, error) {
 	if err != nil {
 		return cat, fmt.Errorf("invalid document index: %w", err)
 	}
+	return cat, cat.validate(policy)
+}
+
+func (cat catalog) validate(policy accessPolicy) error {
 	ids := map[string]bool{}
 	names := map[[3]string]bool{}
 	previous := ""
 	for _, doc := range cat.Documents {
 		if err := doc.validate(policy); err != nil {
-			return cat, err
+			return err
 		}
 		key := [3]string{doc.Scope, strings.ToLower(doc.Milestone), doc.Name}
 		if ids[doc.ID] || names[key] || doc.Path <= previous {
-			return cat, fmt.Errorf("duplicate or unordered catalog entry at %q", doc.Path)
+			return fmt.Errorf("duplicate or unordered catalog entry at %q", doc.Path)
 		}
 		ids[doc.ID], names[key], previous = true, true, doc.Path
 	}
-	return cat, nil
+	return nil
 }
 
 func (d document) validate(policy accessPolicy) error {

@@ -2,10 +2,12 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 
+	"github.com/flarebyte/gh-corkboard/internal/docformat"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +33,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var jsonOutput bool
 	root.PersistentFlags().StringVar(&actor, "as", "", "Select the caller for a board command")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Emit JSON for supported results")
-	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput))
+	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput), docCommand(&actor, &jsonOutput))
 	var helpTarget *cobra.Command
 	root.SetHelpCommand(&cobra.Command{
 		Use:   "help [<command> ...]",
@@ -52,6 +54,14 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	})
 
 	if cmd, err := root.ExecuteC(); err != nil {
+		var input *docformat.InputError
+		if errors.As(err, &input) {
+			if reportErr := writeInputDiagnostic(stdout, jsonOutput, input); reportErr == nil {
+				return 1
+			} else {
+				err = reportErr
+			}
+		}
 		if jsonOutput {
 			_ = json.NewEncoder(stderr).Encode(map[string]string{"code": "command_error", "message": err.Error()})
 		} else {
@@ -69,4 +79,24 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 2
 	}
 	return 0
+}
+
+func writeInputDiagnostic(out io.Writer, asJSON bool, input *docformat.InputError) error {
+	message := input.Error()
+	if errors.Is(input, io.EOF) || errors.Is(input, io.ErrUnexpectedEOF) {
+		message = "unexpected end of input"
+	}
+	message = strings.TrimSuffix(message, ".") + "."
+	if asJSON {
+		first := strings.ToUpper(message[:1])
+		return json.NewEncoder(out).Encode(map[string]any{"diagnostics": []map[string]string{
+			{"code": "invalid_" + input.Format, "message": first + message[1:]},
+		}})
+	}
+	format := strings.ToUpper(input.Format)
+	if format == "MD" {
+		format = "Markdown"
+	}
+	_, err := fmt.Fprintf(out, "Invalid %s: %s\n", format, message)
+	return err
 }
