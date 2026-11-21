@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "principals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(human|agent|skill):[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "role": {
+            "enum": [
+              "member",
+              "admin"
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "uniqueItems": true
+    },
+    "grants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "pattern": "^(agent|skill|topic):[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "principal": {
+            "type": "string",
+            "pattern": "^(human|agent|skill):[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "read",
+                "write",
+                "delete",
+                "status"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "scope",
+          "principal",
+          "permissions"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "principals",
+    "topics",
+    "grants"
+  ],
+  "additionalProperties": false
+}

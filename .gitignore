@@ -35,3 +35,6 @@ go.work.sum
 
 # Local corkboard
 /.gh-corkboard/
+
+temp/
+
