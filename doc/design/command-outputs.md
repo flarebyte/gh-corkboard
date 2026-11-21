@@ -27,8 +27,8 @@ example_help() {
   #   init       Initialize the local board
   #   access     Manage principals, topics, and grants
   #   schema     Manage document schemas
-  #   doc        Create, read, edit, delete, and validate documents
-  #   index      Search, reconcile, and prune the document index
+  #   doc        Find, create, read, edit, delete, and validate documents
+  #   index      Audit, reconcile, and prune the document index as an admin
   #   snapshot   Create a ZIP archive of the board
   #   help       Show root or command-specific help
   #
@@ -55,6 +55,7 @@ example_help_doc() {
   #   create    Create a document from stdin
   #   get       Write the stored bytes to stdout
   #   locate    Resolve a document name in a scope and optional milestone
+  #   search    Find documents in accessible scopes
   #   patch     Apply a patch against an exact base revision
   #   update    Replace content or update metadata
   #   delete    Remove one document
@@ -89,13 +90,13 @@ example_help_doc_patch() {
 }
 
 # Search help
-example_help_index_search() {
-  gh corkboard help index search
+example_help_doc_search() {
+  gh corkboard help doc search
   # Expected stdout
   # Search indexed documents in accessible scopes. Admins can search across the board.
   #
   # Usage
-  #   gh corkboard --as <principal> index search [flags]
+  #   gh corkboard --as <principal> doc search [flags]
   #
   # Flags
   #   --in <scope>         Match one exact agent, skill, or topic scope
@@ -111,7 +112,22 @@ example_help_index_search() {
   #   Table and CSV summarize each match. JSON returns full metadata.
   #
   # Example
-  #   gh corkboard --as agent:implementation index search --in topic:specs --concept 'Cursor/*' --format table
+  #   gh corkboard --as agent:implementation doc search --in topic:specs --concept 'Cursor/*' --format table
+}
+
+# Admin index help
+example_help_index() {
+  gh corkboard help index
+  # Expected stdout
+  # Usage
+  #   gh corkboard --as <principal> index <command> [flags]
+  #
+  # Commands
+  #   audit   Report discrepancies between the index and the board
+  #   resync  Reconcile the index with the board
+  #   prune   Preview or apply removal of archived documents
+  #
+  # These commands require the admin role. Use gh corkboard help doc search to find documents.
 }
 
 # init
@@ -497,6 +513,48 @@ example_doc_locate() {
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb
 }
 
+# doc search
+example_doc_search() {
+  gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
+    --milestone 'v1 launch/*' --concept 'cursor/*'
+  # Expected stdout
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  approved  topic:specs / pagination (md)
+  #   Requirements for cursor pagination
+  #   Milestone: v1 launch/Specs
+  #   Concept: Cursor/Pagination
+  #   agent:specs [pass] Acceptance criteria cover the edge cases.
+  #   agent:test [pass] The test plan covers every criterion.
+  #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
+}
+
+# doc search (compact table)
+# The exact status filter gives every row the same status.
+example_doc_search_table() {
+  gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
+    --milestone 'v1 launch/*' --concept 'cursor/*' --format table
+  # Expected stdout
+  # ID                                    NAME        SCOPE        DESCRIPTION                         MILESTONE        CONCEPT
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  v1 launch/Specs  Cursor/Pagination
+}
+
+# doc search (compact CSV)
+# Exact milestone and concept filters omit those columns.
+example_doc_search_csv() {
+  gh corkboard --as agent:implementation doc search --in topic:specs \
+    --milestone 'v1 launch/Specs' --concept Cursor/Pagination --format csv
+  # Expected stdout
+  # id,name,scope,description,status
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
+}
+
+# doc search (inaccessible scope)
+# The pagination review exists in agent:test. The specs agent has no permission there.
+example_doc_search_inaccessible_scope() {
+  gh corkboard --as agent:specs doc search --in agent:test
+  # Expected stdout
+  # No documents matched.
+}
+
 # doc update
 example_doc_update() {
   gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
@@ -617,6 +675,34 @@ example_doc_validate() {
     },
     "doc locate": {
       "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb"
+    },
+    "doc search": {
+      "documents": [
+        {
+          "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+          "scope": "topic:specs",
+          "name": "pagination",
+          "format": "md",
+          "description": "Requirements for cursor pagination",
+          "milestone": "v1 launch/Specs",
+          "concept": "Cursor/Pagination",
+          "status": "approved",
+          "reviewComments": {
+            "agent:specs": {
+              "comment": "Acceptance criteria cover the edge cases.",
+              "status": "pass"
+            },
+            "agent:test": {
+              "comment": "The test plan covers every criterion.",
+              "status": "pass",
+              "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+            }
+          }
+        }
+      ]
+    },
+    "doc search (inaccessible scope)": {
+      "documents": []
     },
     "doc update": {
       "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
@@ -748,48 +834,6 @@ example_doc_validate() {
 
 # Each function is an independent example. Call a function explicitly to run it.
 
-# index search
-example_index_search() {
-  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-    --milestone 'v1 launch/*' --concept 'cursor/*'
-  # Expected stdout
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  approved  topic:specs / pagination (md)
-  #   Requirements for cursor pagination
-  #   Milestone: v1 launch/Specs
-  #   Concept: Cursor/Pagination
-  #   agent:specs [pass] Acceptance criteria cover the edge cases.
-  #   agent:test [pass] The test plan covers every criterion.
-  #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
-}
-
-# index search (compact table)
-# The exact status filter gives every row the same status.
-example_index_search_table() {
-  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
-    --milestone 'v1 launch/*' --concept 'cursor/*' --format table
-  # Expected stdout
-  # ID                                    NAME        SCOPE        DESCRIPTION                         MILESTONE        CONCEPT
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  v1 launch/Specs  Cursor/Pagination
-}
-
-# index search (compact CSV)
-# Exact milestone and concept filters omit those columns.
-example_index_search_csv() {
-  gh corkboard --as agent:implementation index search --in topic:specs \
-    --milestone 'v1 launch/Specs' --concept Cursor/Pagination --format csv
-  # Expected stdout
-  # id,name,scope,description,status
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
-}
-
-# index search (inaccessible scope)
-# The pagination review exists in agent:test. The specs agent has no permission there.
-example_index_search_inaccessible_scope() {
-  gh corkboard --as agent:specs index search --in agent:test
-  # Expected stdout
-  # No documents matched.
-}
-
 # index audit
 example_index_audit() {
   gh corkboard --as human:owner index audit
@@ -858,34 +902,6 @@ example_snapshot_create() {
 ```json
 {
   "jsonStdout": {
-    "index search": {
-      "documents": [
-        {
-          "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
-          "scope": "topic:specs",
-          "name": "pagination",
-          "format": "md",
-          "description": "Requirements for cursor pagination",
-          "milestone": "v1 launch/Specs",
-          "concept": "Cursor/Pagination",
-          "status": "approved",
-          "reviewComments": {
-            "agent:specs": {
-              "comment": "Acceptance criteria cover the edge cases.",
-              "status": "pass"
-            },
-            "agent:test": {
-              "comment": "The test plan covers every criterion.",
-              "status": "pass",
-              "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
-            }
-          }
-        }
-      ]
-    },
-    "index search (inaccessible scope)": {
-      "documents": []
-    },
     "index audit": {
       "findings": []
     },

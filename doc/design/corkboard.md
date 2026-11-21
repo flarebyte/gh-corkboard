@@ -20,7 +20,7 @@ Only a principal with the `admin` role can add or revoke grants in any scope. An
 
 All registered principals can read the shared schema registry. `access whoami` returns the selected principal's role and effective permissions. `access grant` adds one permission and `access revoke` removes one. Both are idempotent. Remove the grant record when its permission set becomes empty. Revoking an explicit `read` grant leaves the read access implied by `write`, `delete`, or `status` in place. Owners and admins retain their implicit rights. Agent and skill owners get read and write in their own channels. Private scopes allow explicit `read` and `status` grants, so an owner needs a separate `status` grant to review or change status. Reject write and delete grants for private scopes in both CLI commands and policy validation. Reject changes that would leave the board without an admin.
 
-Check the current ACL under the board lock before file access or exposing document metadata. Filter index searches by effective scope permissions and require read access for bulk validation results. A syntactically valid UUID yields the same unavailable error for missing and inaccessible documents. Policy errors fail closed. Reuse the same checks for humans, agents, and skills.
+Check the current ACL under the board lock before file access or exposing document metadata. Filter results from `doc search` by effective scope permissions and require read access for bulk validation results. A syntactically valid UUID yields the same unavailable error for missing and inaccessible documents. Policy errors fail closed. Reuse the same checks for humans, agents, and skills.
 
 In local CLI mode, `--as` declares the caller's identity. It provides routing and guardrails for agents using their assigned identity. An agent with unrestricted shell access under the same OS account can impersonate a principal or edit the board directly. For enforcement against a rogue agent, run the CLI through a trusted launcher or broker that binds each agent session to its principal, rejects identity overrides, and keeps board files and administration outside the agent's direct filesystem access. The same JSON policy can be used in that setup.
 
@@ -108,7 +108,7 @@ For create, the caller supplies a registered scope, a name, a format and optiona
 
 A named schema resolves by format and ID. For example, a filename ending in `--pagination.features.md` uses `schemas/md/features.schema.json`. A missing named schema is a validation error.
 
-Use a document's UUIDv4 to get, modify, delete, validate, or reference it. Create and index search return the UUID as the document's ID. `doc locate` resolves an exact name within a scope, optionally qualified by milestone. The CLI keeps the name, UUID, and path stable through content and metadata updates. For a handoff, include the document's UUID in a shared topic. The recipient needs read access to both the handoff and the referenced document. Self-notes go in the writer's own scope. [UUIDv4 specification](https://www.rfc-editor.org/rfc/rfc9562.html#name-uuid-version-4)
+Use a document's UUIDv4 to get, modify, delete, validate, or reference it. `doc create` and `doc search` return the UUID as the document's ID. `doc locate` resolves an exact name within a scope, optionally qualified by milestone. The CLI keeps the name, UUID, and path stable through content and metadata updates. For a handoff, include the document's UUID in a shared topic. The recipient needs read access to both the handoff and the referenced document. Self-notes go in the writer's own scope. [UUIDv4 specification](https://www.rfc-editor.org/rfc/rfc9562.html#name-uuid-version-4)
 
 ## Command interface
 
@@ -137,11 +137,11 @@ Use a document's UUIDv4 to get, modify, delete, validate, or reference it. Creat
 | Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Create a unique name within the selected scope and milestone and return its UUID |
 | Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
 | Scope read | `doc locate --in <scope> --name <name> [--milestone <text>]` | board.documents | Resolve an exact name within a scope and require the milestone when the name is ambiguous |
+| Registered principal | `doc search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table\|csv\|json>]` | board.documents | Filter accessible documents by scope and metadata with board-wide access for admins |
 | Scope write | `doc patch <doc-id> --expect <sha256> [--preserve-row-order]` | board.patching | Apply a patch from stdin to the exact base revision and format the result |
 | Scope write for content, description, milestone or concept. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
-| Registered principal | `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table\|csv\|json>]` | board.index | Filter accessible documents by scope and metadata with board-wide access for admins |
 | Admin | `index audit` | board.index | Report filesystem and index discrepancies without changing board data |
 | Admin | `index resync` | board.index | Reconcile the catalog with managed locations and preserve metadata and filename UUIDs |
 | Admin | `index prune [--apply --expect <plan-id>]` | board.retention | Preview or apply removal of archived documents |
@@ -189,7 +189,7 @@ example_review_workflow() (
   gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
   review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review)
   gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
-  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
+  gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
     --milestone "v1 launch/specs" --concept cursor/pagination --json
   gh corkboard --as agent:implementation doc get "$review_id"
   gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
@@ -303,7 +303,7 @@ The logical name key is scope, case-folded milestone, and name. An unset milesto
 
 Set these fields with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace from the whole flag value before checking it and preserve its case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
 
-`index search` starts with all indexed documents for an admin. For other principals, keep only documents in scopes where the caller has at least one effective permission, including the implicit rights on its own channel. Apply this check before matching any search terms or preparing output, in every output format. A search for an inaccessible scope returns an empty successful result.
+`doc search` starts with all indexed documents for an admin. For other principals, keep only documents in scopes where the caller has at least one effective permission, including the implicit rights on its own channel. Apply this check before matching any search terms or preparing output, in every output format. A search for an inaccessible scope returns an empty successful result.
 
 Combine supplied filters with AND. `--in` matches one exact logical scope, such as `topic:specs`, `agent:test`, or `skill:review`. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
 
@@ -392,7 +392,7 @@ In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6
 
 #### Search output formats
 
-Use `index search --format table` or `--format csv` for a compact summary. `--format json` is equivalent to `--json` and returns full document metadata. Specify one output selector per invocation. With neither selector, search prints the detailed text summary.
+Use `doc search --format table` or `--format csv` for a compact summary. `--format json` is equivalent to `--json` and returns full document metadata. Specify one output selector per invocation. With neither selector, search prints the detailed text summary.
 
 Both compact formats start with `id`, `name`, `scope`, and `description`, followed in order by `status`, `milestone`, and `concept` where applicable. Keep `scope` even when filtering with `--in`. Omit `status`, `milestone`, or `concept` when its own filter is an exact match. Keep the corresponding column for an unfiltered field or a trailing-asterisk filter. An unset field appears as an empty cell when its column is present. Choose the columns from the filters so the header stays the same even when the result is empty.
 

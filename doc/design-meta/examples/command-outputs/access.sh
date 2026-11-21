@@ -16,8 +16,8 @@ example_help() {
   #   init       Initialize the local board
   #   access     Manage principals, topics, and grants
   #   schema     Manage document schemas
-  #   doc        Create, read, edit, delete, and validate documents
-  #   index      Search, reconcile, and prune the document index
+  #   doc        Find, create, read, edit, delete, and validate documents
+  #   index      Audit, reconcile, and prune the document index as an admin
   #   snapshot   Create a ZIP archive of the board
   #   help       Show root or command-specific help
   #
@@ -44,6 +44,7 @@ example_help_doc() {
   #   create    Create a document from stdin
   #   get       Write the stored bytes to stdout
   #   locate    Resolve a document name in a scope and optional milestone
+  #   search    Find documents in accessible scopes
   #   patch     Apply a patch against an exact base revision
   #   update    Replace content or update metadata
   #   delete    Remove one document
@@ -78,13 +79,13 @@ example_help_doc_patch() {
 }
 
 # Search help
-example_help_index_search() {
-  gh corkboard help index search
+example_help_doc_search() {
+  gh corkboard help doc search
   # Expected stdout
   # Search indexed documents in accessible scopes. Admins can search across the board.
   #
   # Usage
-  #   gh corkboard --as <principal> index search [flags]
+  #   gh corkboard --as <principal> doc search [flags]
   #
   # Flags
   #   --in <scope>         Match one exact agent, skill, or topic scope
@@ -100,7 +101,22 @@ example_help_index_search() {
   #   Table and CSV summarize each match. JSON returns full metadata.
   #
   # Example
-  #   gh corkboard --as agent:implementation index search --in topic:specs --concept 'Cursor/*' --format table
+  #   gh corkboard --as agent:implementation doc search --in topic:specs --concept 'Cursor/*' --format table
+}
+
+# Admin index help
+example_help_index() {
+  gh corkboard help index
+  # Expected stdout
+  # Usage
+  #   gh corkboard --as <principal> index <command> [flags]
+  #
+  # Commands
+  #   audit   Report discrepancies between the index and the board
+  #   resync  Reconcile the index with the board
+  #   prune   Preview or apply removal of archived documents
+  #
+  # These commands require the admin role. Use gh corkboard help doc search to find documents.
 }
 
 # init

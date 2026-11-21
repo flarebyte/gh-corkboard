@@ -49,6 +49,48 @@ example_doc_locate() {
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb
 }
 
+# doc search
+example_doc_search() {
+  gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
+    --milestone 'v1 launch/*' --concept 'cursor/*'
+  # Expected stdout
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  approved  topic:specs / pagination (md)
+  #   Requirements for cursor pagination
+  #   Milestone: v1 launch/Specs
+  #   Concept: Cursor/Pagination
+  #   agent:specs [pass] Acceptance criteria cover the edge cases.
+  #   agent:test [pass] The test plan covers every criterion.
+  #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
+}
+
+# doc search (compact table)
+# The exact status filter gives every row the same status.
+example_doc_search_table() {
+  gh corkboard --as agent:implementation doc search --in topic:specs --status approved \
+    --milestone 'v1 launch/*' --concept 'cursor/*' --format table
+  # Expected stdout
+  # ID                                    NAME        SCOPE        DESCRIPTION                         MILESTONE        CONCEPT
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  v1 launch/Specs  Cursor/Pagination
+}
+
+# doc search (compact CSV)
+# Exact milestone and concept filters omit those columns.
+example_doc_search_csv() {
+  gh corkboard --as agent:implementation doc search --in topic:specs \
+    --milestone 'v1 launch/Specs' --concept Cursor/Pagination --format csv
+  # Expected stdout
+  # id,name,scope,description,status
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
+}
+
+# doc search (inaccessible scope)
+# The pagination review exists in agent:test. The specs agent has no permission there.
+example_doc_search_inaccessible_scope() {
+  gh corkboard --as agent:specs doc search --in agent:test
+  # Expected stdout
+  # No documents matched.
+}
+
 # doc update
 example_doc_update() {
   gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
