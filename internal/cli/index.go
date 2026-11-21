@@ -11,7 +11,7 @@ import (
 )
 
 func indexCommand(actor *string, jsonOutput *bool) *cobra.Command {
-	group := &cobra.Command{Use: "index", Short: "Audit and reconcile the catalog as an admin"}
+	group := &cobra.Command{Use: "index", Short: "Audit, reconcile, and prune the document index as an admin"}
 	group.AddCommand(&cobra.Command{
 		Use: "audit", Short: "Report differences between indexed records and stored files",
 		Long:    "Report catalog findings without changing data. Requires a board administrator. Writes findings to stdout and exits 1 if drift is found.",
@@ -66,6 +66,7 @@ func indexCommand(actor *string, jsonOutput *bool) *cobra.Command {
 			return err
 		},
 	})
+	group.AddCommand(pruneCommand(actor, jsonOutput))
 	return group
 }
 

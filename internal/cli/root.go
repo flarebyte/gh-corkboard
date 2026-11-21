@@ -34,7 +34,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var jsonOutput bool
 	root.PersistentFlags().StringVar(&actor, "as", "", "Select the caller for a board command")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Emit JSON for supported results")
-	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput), docCommand(&actor, &jsonOutput), schemaCommand(&actor, &jsonOutput), indexCommand(&actor, &jsonOutput))
+	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput), docCommand(&actor, &jsonOutput), schemaCommand(&actor, &jsonOutput), indexCommand(&actor, &jsonOutput), snapshotCommand(&actor))
 	var helpTarget *cobra.Command
 	root.SetHelpCommand(&cobra.Command{
 		Use:   "help [<command> ...]",
@@ -76,7 +76,19 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 				code = "patch_context_mismatch"
 				message = "Patch hunk does not match the current content and position. Get the current content and revision before retrying."
 			}
-			_ = json.NewEncoder(stderr).Encode(map[string]string{"code": code, "message": message})
+			if errors.Is(err, board.ErrPrunePlanMismatch) {
+				code = "prune_plan_mismatch"
+			}
+			var partial *board.PartialPruneError
+			if errors.As(err, &partial) {
+				_ = json.NewEncoder(stderr).Encode(struct {
+					Code    string `json:"code"`
+					Message string `json:"message"`
+					board.PruneResult
+				}{"prune_incomplete", partial.Err.Error(), partial.Result})
+			} else {
+				_ = json.NewEncoder(stderr).Encode(map[string]string{"code": code, "message": message})
+			}
 		} else {
 			if helpTarget != nil {
 				cmd = helpTarget
