@@ -204,6 +204,26 @@ Use `gh corkboard help <command> ...` or append `--help` or `-h` to a command pa
 
 Render help from the same command definitions used for argument parsing. Help works outside a Git worktree without a board, principal, or stdin. It writes plain text to stdout and exits 0. An unknown command path exits 2, sends the error and the closest valid help invocation to stderr, and leaves stdout empty.
 
+## Implementation
+
+### Go dependencies
+
+#### Dependency choices and review scope
+
+Start with the five direct modules in the dependency table. Cobra follows the command framework used by `gh-flarebyte`, including explicit stdout and stderr streams. The reviewed revisions use Go 1.26.0 or newer because of `golang.org/x/sys`. Keep `golang.org/x/text` at v0.41.0 or later as an indirect requirement. [x/text advisory](https://pkg.go.dev/vuln/GO-2026-6629)
+
+The review on 2026-11-21 checked exact versions and used the 100-star floor from the neighboring project. A temporary Go module exercised Cobra help, the Markdown heading parser, offline JSON Schema loading, and strict unified diff application. The macOS, Linux, and Windows package import lists contained eight third-party modules in total. OSV returned no matching advisories for their selected versions. The broader module metadata included tooling requirements with advisories outside those imports. Scan the final application's imports when they exist. [OSV](https://osv.dev/) · [Go Vulnerability Database](https://pkg.go.dev/vuln/)
+
+#### Reviewed direct dependencies
+
+| concept | github_stars | license | minimum_go | module | purpose | security_review | upstream | version |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| board.dependencies | 44809 | Apache-2.0 | 1.15 | github.com/spf13/cobra | Nested commands and flags and contextual help | No matching OSV advisory for this release. Uses the same command framework as gh-flarebyte. | https://github.com/spf13/cobra | v1.10.2 |
+| board.dependencies | 5111 | MIT | 1.22 | github.com/yuin/goldmark | Parse CommonMark and extract headings from its AST | No matching OSV advisory for this release. Includes the fix for GO-2026-5320 in v1.7.17. Use the parser without HTML rendering. | https://github.com/yuin/goldmark | v1.8.7 |
+| board.dependencies | 1298 | Apache-2.0 | 1.21 | github.com/santhosh-tekuri/jsonschema/v6 | Validate Draft 2020-12 document schemas and built-in metadata schemas | No matching OSV advisory for this release. Resolve indirect golang.org/x/text at v0.41.0 or later for GO-2026-6629. Use a loader restricted to bundled schema resources. | https://github.com/santhosh-tekuri/jsonschema | v6.0.3 |
+| board.dependencies | 159 | MIT | 1.21 | github.com/bluekeyes/go-gitdiff | Parse and strictly apply single-document unified text patches | No matching OSV advisory for this release. Apply to a buffer after checking the single-document patch shape. Header labels carry no filesystem authority. | https://github.com/bluekeyes/go-gitdiff | v0.9.0 |
+| board.dependencies | 1364 | BSD-3-Clause | 1.26.0 | golang.org/x/sys | Lock an already opened board file with unix.Flock or windows.LockFileEx | No matching OSV advisory for this release. Includes the fix for GO-2026-5024 in v0.44.0. Lock the descriptor from the root-confined open. | https://github.com/golang/sys | v0.50.0 |
+
 ## Specification sources
 
 ### Concept registry
@@ -216,6 +236,7 @@ Render help from the same command definitions used for argument parsing. Help wo
 | Principals and scope permissions | board.access | board |
 | Go extension command interface | board.cli | board |
 | Agent handoffs self-notes and human review | board.communication | board |
+| Go dependency choices and advisory evidence | board.dependencies | board |
 | Document formats names and lifecycle | board.documents | board |
 | Automatic formatting on document writes | board.formatting | board |
 | Metadata search and filesystem reconciliation | board.index | board |
@@ -264,7 +285,7 @@ Under the board lock, check authorization and hash the current file bytes before
 
 Apply a patch to a temporary result and use the established document write and index update flow after all checks pass. The document keeps its ID and existing metadata, subject to the usual archived-to-draft rule when bytes change. Successful patch output has the same document metadata shape as a content update. For text patches, `formattingChanged` compares the patched text with the formatted result. When true, the default text output adds `Formatting changed the patched content.` JSON patches produce canonical JSON directly, so their results omit this field.
 
-In Go, evaluate `go-gitdiff` for parsing unified text and applying it in strict mode to a buffer. Validate the single-document patch shape before applying it. For JSON, use the existing strict decoder and implement the RFC merge over the parsed values, preserving numeric tokens with `json.Number`. The upstream `json-patch/v5` repository exposes Merge Patch, but its source contains paths that prune nulls from replacement arrays. Qualify any dependency against RFC 7396 Appendix A, nulls inside arrays, null roots, and large numbers. Test the unified diff adapter with strict context, insertions, and the missing-final-newline marker. [Go unified diff parser](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/parser.go) · [Strict text application](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/apply_text.go) · [Go JSON number decoding](https://pkg.go.dev/encoding/json#Decoder.UseNumber) · [Merge Patch implementation](https://github.com/evanphx/json-patch/blob/master/v5/merge.go)
+Use `go-gitdiff` for parsing unified text and applying it in strict mode to a buffer. Validate the single-document patch shape before applying it. For JSON, use the existing strict decoder and implement the RFC merge over the parsed values, preserving numeric tokens with `json.Number`. The upstream `json-patch/v5` source contains paths that prune nulls from replacement arrays. Check the merge implementation against RFC 7396 Appendix A, nulls inside arrays, null roots, and large numbers. Test the unified diff adapter with strict context, insertions, and the missing-final-newline marker. [Go unified diff parser](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/parser.go) · [Strict text application](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/apply_text.go) · [Go JSON number decoding](https://pkg.go.dev/encoding/json#Decoder.UseNumber) · [Merge Patch implementation](https://github.com/evanphx/json-patch/blob/master/v5/merge.go)
 
 ### Index and lifecycle
 

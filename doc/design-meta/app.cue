@@ -62,6 +62,12 @@ reports: [{
 			notes: ["board.retention", "board.retention.archive-workflow"]
 		}]
 	}, {
+		title: "Implementation"
+		sections: [{
+			title: "Go dependencies"
+			notes: ["board.dependencies", "board.dependencies.reviewed"]
+		}]
+	}, {
 		title: "Specification sources"
 		sections: [{
 			title: "Concept registry"
@@ -75,6 +81,7 @@ notes: list.Concat([[
 	{name: "board.commands", title: "Command reference", filepath: "examples/commands.csv"},
 	{name: "board.concepts", title: "Concept registry", filepath: "examples/concepts.csv"},
 	{name: "board.contracts", title: "Data and diagnostic shapes", filepath: "examples/contracts.ts"},
+	{name: "board.dependencies.reviewed", title: "Reviewed direct dependencies", filepath: "examples/go-dependencies.csv"},
 	{name: "board.formatting.formats", title: "Formatting rules by format", filepath: "examples/document-formatting.csv"},
 	{name: "board.index.example", title: "Document index example", filepath: "examples/documents.json"},
 	{name: "board.interface.review-workflow", title: "Review and handoff example", filepath: "examples/workflows/review.sh"},

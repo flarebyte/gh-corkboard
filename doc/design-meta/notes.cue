@@ -90,6 +90,15 @@ _proseNotes: [
 			"""#
 	},
 	{
+		name:  "board.dependencies"
+		title: "Dependency choices and review scope"
+		markdown: #"""
+			Start with the five direct modules in the dependency table. Cobra follows the command framework used by `gh-flarebyte`, including explicit stdout and stderr streams. The reviewed revisions use Go 1.26.0 or newer because of `golang.org/x/sys`. Keep `golang.org/x/text` at v0.41.0 or later as an indirect requirement. [x/text advisory](https://pkg.go.dev/vuln/GO-2026-6629)
+
+			The review on 2026-11-21 checked exact versions and used the 100-star floor from the neighboring project. A temporary Go module exercised Cobra help, the Markdown heading parser, offline JSON Schema loading, and strict unified diff application. The macOS, Linux, and Windows package import lists contained eight third-party modules in total. OSV returned no matching advisories for their selected versions. The broader module metadata included tooling requirements with advisories outside those imports. Scan the final application's imports when they exist. [OSV](https://osv.dev/) · [Go Vulnerability Database](https://pkg.go.dev/vuln/)
+			"""#
+	},
+	{
 		name:  "board.formatting"
 		title: "Automatic formatting on write"
 		markdown: #"""
@@ -118,7 +127,7 @@ _proseNotes: [
 
 			Apply a patch to a temporary result and use the established document write and index update flow after all checks pass. The document keeps its ID and existing metadata, subject to the usual archived-to-draft rule when bytes change. Successful patch output has the same document metadata shape as a content update. For text patches, `formattingChanged` compares the patched text with the formatted result. When true, the default text output adds `Formatting changed the patched content.` JSON patches produce canonical JSON directly, so their results omit this field.
 
-			In Go, evaluate `go-gitdiff` for parsing unified text and applying it in strict mode to a buffer. Validate the single-document patch shape before applying it. For JSON, use the existing strict decoder and implement the RFC merge over the parsed values, preserving numeric tokens with `json.Number`. The upstream `json-patch/v5` repository exposes Merge Patch, but its source contains paths that prune nulls from replacement arrays. Qualify any dependency against RFC 7396 Appendix A, nulls inside arrays, null roots, and large numbers. Test the unified diff adapter with strict context, insertions, and the missing-final-newline marker. [Go unified diff parser](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/parser.go) · [Strict text application](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/apply_text.go) · [Go JSON number decoding](https://pkg.go.dev/encoding/json#Decoder.UseNumber) · [Merge Patch implementation](https://github.com/evanphx/json-patch/blob/master/v5/merge.go)
+			Use `go-gitdiff` for parsing unified text and applying it in strict mode to a buffer. Validate the single-document patch shape before applying it. For JSON, use the existing strict decoder and implement the RFC merge over the parsed values, preserving numeric tokens with `json.Number`. The upstream `json-patch/v5` source contains paths that prune nulls from replacement arrays. Check the merge implementation against RFC 7396 Appendix A, nulls inside arrays, null roots, and large numbers. Test the unified diff adapter with strict context, insertions, and the missing-final-newline marker. [Go unified diff parser](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/parser.go) · [Strict text application](https://github.com/bluekeyes/go-gitdiff/blob/master/gitdiff/apply_text.go) · [Go JSON number decoding](https://pkg.go.dev/encoding/json#Decoder.UseNumber) · [Merge Patch implementation](https://github.com/evanphx/json-patch/blob/master/v5/merge.go)
 			"""#
 	},
 	{
