@@ -140,7 +140,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 | Scope write for content, description, milestone or concept. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
-| Registered principal | `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>]` | board.index | Search readable metadata with exact or trailing-asterisk prefix filters for milestone and concept |
+| Registered principal | `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table\|csv\|json>]` | board.index | Search readable metadata by scope and other filters with compact table or CSV output and full JSON output |
 | Admin | `index audit` | board.index | Report filesystem and index discrepancies without changing board data |
 | Admin | `index resync` | board.index | Reconcile the catalog with valid managed locations and preserve surviving metadata |
 | Admin | `index prune [--apply --expect <plan-id>]` | board.retention | Preview or apply removal of archived documents |
@@ -297,7 +297,7 @@ Use `go-gitdiff` for parsing unified text and applying it in strict mode to a bu
 
 Set these fields with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace from the whole flag value before checking it and preserve its case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
 
-`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
+`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one exact logical scope, such as `topic:specs`, `agent:test`, or `skill:review`. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
 
 `--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
 
@@ -366,6 +366,14 @@ The validated document index is the source of the mapping in both directions. Us
 **Path to locator.** Use a canonical path derived from validated logical fields or discovered under the board root during audit or resync. Check that it fits a registered scope and the managed filename rules, then look up that exact path in the index and use the entry's UUID. A path without an entry has no locator yet. Audit reports it as unindexed, and resync can adopt it and assign a new UUID.
 
 In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6f` with `agents/test/pagination-review.md`. Both conversions are internal storage functions. The public `doc locate` command takes logical fields and returns the UUID. It derives the canonical path and performs the reverse lookup internally, with read authorization and a file-presence check.
+
+#### Search output formats
+
+Use `index search --format table` or `--format csv` for a compact summary. `--format json` is equivalent to `--json` and returns full document metadata. Specify one output selector per invocation. With neither selector, search prints the detailed text summary.
+
+Both compact formats start with `id`, `name`, `scope`, and `description`, followed in order by `status`, `milestone`, and `concept` where applicable. Keep `scope` even when filtering with `--in`. Omit `status`, `milestone`, or `concept` when its own filter is an exact match. Keep the corresponding column for an unfiltered field or a trailing-asterisk filter. An unset field appears as an empty cell when its column is present. Choose the columns from the filters so the header stays the same even when the result is empty.
+
+Cap each compact description at 60 Unicode code points including the suffix. For longer descriptions, keep the first 57 and append `...`. Use one row per document and preserve search result order. CSV writes a lowercase header and standard quoted records. Table output uses uppercase headings and aligned columns. Both write just the header when no documents match. JSON retains full descriptions and metadata regardless of applied filters.
 
 #### Lifecycle statuses
 

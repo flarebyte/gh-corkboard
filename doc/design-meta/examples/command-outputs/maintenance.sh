@@ -16,6 +16,26 @@ example_index_search() {
   #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
 }
 
+# index search (compact table)
+# The exact status filter gives every row the same status.
+example_index_search_table() {
+  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
+    --milestone 'v1 launch/*' --concept 'cursor/*' --format table
+  # Expected stdout
+  # ID                                    NAME        SCOPE        DESCRIPTION                         MILESTONE        CONCEPT
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  v1 launch/Specs  Cursor/Pagination
+}
+
+# index search (compact CSV)
+# Exact milestone and concept filters omit those columns.
+example_index_search_csv() {
+  gh corkboard --as agent:implementation index search --in topic:specs \
+    --milestone 'v1 launch/Specs' --concept Cursor/Pagination --format csv
+  # Expected stdout
+  # id,name,scope,description,status
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
+}
+
 # index audit
 example_index_audit() {
   gh corkboard --as human:owner index audit

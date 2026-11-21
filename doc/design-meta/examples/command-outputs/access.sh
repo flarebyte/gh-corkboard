@@ -77,6 +77,32 @@ example_help_doc_patch() {
   #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$base_sha256" < changes.diff
 }
 
+# Search help
+example_help_index_search() {
+  gh corkboard help index search
+  # Expected stdout
+  # Search readable indexed documents. Requires a registered principal.
+  #
+  # Usage
+  #   gh corkboard --as <principal> index search [flags]
+  #
+  # Flags
+  #   --in <scope>         Match one exact agent, skill, or topic scope
+  #   --status <status>    Match one lifecycle status
+  #   --milestone <text>   Match a milestone or use a trailing * for a prefix
+  #   --concept <text>     Match a concept or use a trailing * for a prefix
+  #   --query <text>       Search names, descriptions, milestones, and concepts
+  #   --format <mode>      Use table, csv, or json. Default output is detailed text.
+  #   --json               Alias for --format json
+  #   -h, --help           Show this help
+  #
+  # Output
+  #   Table and CSV summarize each match. JSON returns full metadata.
+  #
+  # Example
+  #   gh corkboard --as agent:implementation index search --in topic:specs --concept 'Cursor/*' --format table
+}
+
 # init
 example_init() {
   gh corkboard --as human:owner init

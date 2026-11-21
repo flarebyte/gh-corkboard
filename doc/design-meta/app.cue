@@ -50,7 +50,7 @@ reports: [{
 			]
 		}, {
 			title: "Index and lifecycle"
-			notes: ["board.index", "board.index.path-resolution", "board.index.example", "board.lifecycle"]
+			notes: ["board.index", "board.index.search-output", "board.index.path-resolution", "board.index.example", "board.lifecycle"]
 		}, {
 			title: "Internal JSON validation"
 			notes: ["board.validation.internal", "board.validation.internal.fields"]

@@ -88,6 +88,32 @@ example_help_doc_patch() {
   #   gh corkboard --as agent:specs doc patch "$doc_id" --expect "$base_sha256" < changes.diff
 }
 
+# Search help
+example_help_index_search() {
+  gh corkboard help index search
+  # Expected stdout
+  # Search readable indexed documents. Requires a registered principal.
+  #
+  # Usage
+  #   gh corkboard --as <principal> index search [flags]
+  #
+  # Flags
+  #   --in <scope>         Match one exact agent, skill, or topic scope
+  #   --status <status>    Match one lifecycle status
+  #   --milestone <text>   Match a milestone or use a trailing * for a prefix
+  #   --concept <text>     Match a concept or use a trailing * for a prefix
+  #   --query <text>       Search names, descriptions, milestones, and concepts
+  #   --format <mode>      Use table, csv, or json. Default output is detailed text.
+  #   --json               Alias for --format json
+  #   -h, --help           Show this help
+  #
+  # Output
+  #   Table and CSV summarize each match. JSON returns full metadata.
+  #
+  # Example
+  #   gh corkboard --as agent:implementation index search --in topic:specs --concept 'Cursor/*' --format table
+}
+
 # init
 example_init() {
   gh corkboard --as human:owner init
@@ -705,6 +731,26 @@ example_index_search() {
   #   agent:specs [pass] Acceptance criteria cover the edge cases.
   #   agent:test [pass] The test plan covers every criterion.
   #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
+}
+
+# index search (compact table)
+# The exact status filter gives every row the same status.
+example_index_search_table() {
+  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
+    --milestone 'v1 launch/*' --concept 'cursor/*' --format table
+  # Expected stdout
+  # ID                                    NAME        SCOPE        DESCRIPTION                         MILESTONE        CONCEPT
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  pagination  topic:specs  Requirements for cursor pagination  v1 launch/Specs  Cursor/Pagination
+}
+
+# index search (compact CSV)
+# Exact milestone and concept filters omit those columns.
+example_index_search_csv() {
+  gh corkboard --as agent:implementation index search --in topic:specs \
+    --milestone 'v1 launch/Specs' --concept Cursor/Pagination --format csv
+  # Expected stdout
+  # id,name,scope,description,status
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb,pagination,topic:specs,Requirements for cursor pagination,approved
 }
 
 # index audit

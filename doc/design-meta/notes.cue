@@ -164,7 +164,7 @@ _proseNotes: [
 
 			Set these fields with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace from the whole flag value before checking it and preserve its case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
 
-			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
+			`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one exact logical scope, such as `topic:specs`, `agent:test`, or `skill:review`. `--milestone` and `--concept` match only entries with that field set. Trim outer whitespace from each filter. A term without an asterisk must be a valid field value and matches the entire value case-insensitively. A term with one trailing `*` matches values that begin with the text before it, also case-insensitively. The prefix must be a possible beginning of a valid label and may end at a slash. For example, `--concept 'Cursor/*'` matches `Cursor/Pagination`, and `--milestone 'v1 launch/*'` matches `v1 launch/Specs`. Quote the filter so the shell passes the asterisk literally. A lone `*` matches any set value. Blank terms and asterisks anywhere other than the single trailing position are usage errors.
 
 			`--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
 
@@ -179,6 +179,17 @@ _proseNotes: [
 			Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported entries. `index resync` adopts files only in registered managed scopes and assigns new UUIDs, draft status, and empty review comments. Newly adopted files have no milestone or concept. Resync preserves UUIDs, descriptions, milestones, concepts, and comments at surviving paths and preserves status except when bytes change for an archived document. It drops records for missing files and reports those removals and status resets. External renames appear as a missing path and a new file. Resync can rebuild a missing catalog with new IDs. It refuses to overwrite a malformed or unsupported index so its metadata remains recoverable. Use `doc validate --all` to check content in readable indexed documents.
 
 			All CLI operations affecting the board use an OS-backed lock released on process exit. Mutations take an exclusive lock. Reads hold a compatible lock from authorization through IO so an ACL change cannot interleave with a CLI read. Keep lock bookkeeping under `index/` and write replacements atomically at the individual-file level. Write document bytes before the corresponding index entry, and report partial success if the index write fails. Audit and resync recover file/catalog consistency after interrupted updates. Direct editors can create drift and must finish writes before a snapshot or destructive command.
+			"""#
+	},
+	{
+		name:  "board.index.search-output"
+		title: "Search output formats"
+		markdown: #"""
+			Use `index search --format table` or `--format csv` for a compact summary. `--format json` is equivalent to `--json` and returns full document metadata. Specify one output selector per invocation. With neither selector, search prints the detailed text summary.
+
+			Both compact formats start with `id`, `name`, `scope`, and `description`, followed in order by `status`, `milestone`, and `concept` where applicable. Keep `scope` even when filtering with `--in`. Omit `status`, `milestone`, or `concept` when its own filter is an exact match. Keep the corresponding column for an unfiltered field or a trailing-asterisk filter. An unset field appears as an empty cell when its column is present. Choose the columns from the filters so the header stays the same even when the result is empty.
+
+			Cap each compact description at 60 Unicode code points including the suffix. For longer descriptions, keep the first 57 and append `...`. Use one row per document and preserve search result order. CSV writes a lowercase header and standard quoted records. Table output uses uppercase headings and aligned columns. Both write just the header when no documents match. JSON retains full descriptions and metadata regardless of applied filters.
 			"""#
 	},
 	{
