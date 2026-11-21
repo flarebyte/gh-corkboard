@@ -48,7 +48,7 @@ example_index_resync() {
   gh corkboard --as human:owner index resync
   # Expected stdout
   # Indexed 1 new document as draft.
-  # 7ee9c97c-dcbb-4355-898a-2fbb18868362  agents/test/local-results.csv
+  # 7ee9c97c-dcbb-4355-898a-2fbb18868362  agents/test/7ee9c97c-dcbb-4355-898a-2fbb18868362--local-results.csv
 }
 
 # index prune
@@ -58,7 +58,7 @@ example_index_prune() {
   # Expected stdout
   # Plan c7f4494f4450f8616639b3d733ab7257407c2d5f43adf751bfc8b0d2f12f07b3
   # 1 archived document is eligible for deletion.
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  topics/specs/pagination.md
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md
 }
 
 # index prune --apply
@@ -81,7 +81,7 @@ example_snapshot_create() {
   # .gh-corkboard/agents/implementation/
   # .gh-corkboard/agents/specs/
   # .gh-corkboard/agents/test/
-  # .gh-corkboard/agents/test/pagination-review.md
+  # .gh-corkboard/agents/test/b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md
   # .gh-corkboard/index/
   # .gh-corkboard/index/access.json
   # .gh-corkboard/index/documents.json
@@ -92,5 +92,6 @@ example_snapshot_create() {
   # .gh-corkboard/skills/
   # .gh-corkboard/topics/
   # .gh-corkboard/topics/specs/
-  # .gh-corkboard/topics/specs/pagination.md
+  # .gh-corkboard/topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md
+  # .gh-corkboard/topics/specs/cf89eab1-3451-4e41-a6bb-0c6110a9d934--pagination.md
 }

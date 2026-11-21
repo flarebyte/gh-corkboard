@@ -28,6 +28,8 @@ _proseNotes: [
 		markdown: #"""
 			The Go binary is `gh-corkboard`, invoked as `gh corkboard`. Board commands require a Git worktree and resolve its root from the current directory, including in a linked worktree. Each board belongs to one checkout and works offline without GitHub authentication. Handoffs require agents to share that board. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
 
+			A scope is one container for documents and permissions. It can be an agent channel such as `agent:test`, a skill channel such as `skill:review`, or a shared topic such as `topic:specs`. Each scope maps to one directory under `agents/`, `skills/`, or `topics/`.
+
 			```text
 			.gh-corkboard/
 			├── index/
@@ -41,26 +43,24 @@ _proseNotes: [
 			│       └── features.schema.json
 			├── agents/
 			│   ├── implementation/
-			│   │   └── follow-up.md
 			│   ├── specs/
 			│   └── test/
-			│       └── pagination-review.md
+			│       └── b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md
 			├── skills/
 			│   └── review/
 			└── topics/
 			    └── specs/
-			        ├── pagination.features.md
-			        ├── pagination.md
-			        └── pagination.spec.json
+			        ├── 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md
+			        └── cf89eab1-3451-4e41-a6bb-0c6110a9d934--pagination.md
 			```
 
 			`init` creates the five top-level directories, the three schema format directories, a version-1 access policy and an empty version-1 index on first initialization. It adds `/.gh-corkboard/` as the final root `.gitignore` rule if needed, verifies the rule is effective, and reports tracked corkboard paths. Repeated initialization preserves existing board data.
 
-			For create, the caller supplies a registered scope, a name, a format and optionally a schema ID. Accept slugs matching `[a-z0-9][a-z0-9_-]{0,63}` and reject platform-reserved names. The parser accepts only the declared types, enum values and slug form. Build the board-relative path internally from the scope and basename. For example, `topic:specs`, `pagination`, `json` and `spec` map to `topics/specs/pagination.spec.json`. Each managed document is an immediate child of its scope directory. Validate the stored path against the derived path every time the index is loaded, and use root-confined filesystem operations that reject symlinks and special files. Anchor scope access so a replaced directory cannot redirect IO to a different scope. [Go traversal-resistant file APIs](https://go.dev/blog/osroot)
+			For create, the caller supplies a registered scope, a name, a format and optionally a schema ID. Accept slugs matching `[a-z0-9][a-z0-9_-]{0,63}` and reject platform-reserved names. Allocate a UUIDv4 and build the path inside the scope directory. The basename is `<uuid>--<name>.<format>` or `<uuid>--<name>.<schema-id>.<format>`. The UUID makes the filename unique while the name keeps it readable. Validate the derived path every time the index is loaded and use root-confined filesystem operations that reject symlinks and special files. Anchor scope access so a replaced directory cannot redirect IO to a different scope. [Go traversal-resistant file APIs](https://go.dev/blog/osroot)
 
-			The basename is `<name>.<format>` or `<name>.<schema-id>.<format>`. A named schema resolves by both format and ID, such as `schemas/md/features.schema.json` for `pagination.features.md`. A missing named schema is a validation error.
+			A named schema resolves by format and ID. For example, a filename ending in `--pagination.features.md` uses `schemas/md/features.schema.json`. A missing named schema is a validation error.
 
-			Every indexed document has a UUIDv4 locator, including documents adopted by resync. Use that ID to get, modify, delete, validate, or reference a document. Create and index search return the locator as the document's ID. `doc locate` resolves an exact scope, name, format, and optional schema ID to the same UUID. Omitting the schema matches a schemaless document. The command checks read access and file presence and uses the same unavailable error for missing and inaccessible documents. It prints the UUID on its own line or an object with an `id` field with `--json`. IDs stay stable through content and metadata updates. Authorization comes from the current principal and scope policy. For a handoff, post in a shared topic and include the referenced document's UUID. The recipient needs read access to both the handoff and the referenced document. Self-notes go in the writer's own scope. [UUIDv4 specification](https://www.rfc-editor.org/rfc/rfc9562.html#name-uuid-version-4)
+			Use a document's UUIDv4 to get, modify, delete, validate, or reference it. Create and index search return the UUID as the document's ID. `doc locate` resolves an exact name within a scope, optionally qualified by milestone. The CLI keeps the name, UUID, and path stable through content and metadata updates. For a handoff, include the document's UUID in a shared topic. The recipient needs read access to both the handoff and the referenced document. Self-notes go in the writer's own scope. [UUIDv4 specification](https://www.rfc-editor.org/rfc/rfc9562.html#name-uuid-version-4)
 			"""#
 	},
 	{
@@ -69,7 +69,7 @@ _proseNotes: [
 		markdown: #"""
 			Board commands in the table follow `gh corkboard --as <principal>`. Run help directly with `gh corkboard help`. Board commands address resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
-			Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. Exit 0 for success. Exit 1 for validation failures, audit findings, or malformed document or patch content, with diagnostics on stdout. Exit 2 for usage, authorization, or operational failure, with errors on stderr. Search and validation list results use a stable lexical scope and filename order.
+			Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. Exit 0 for success. Exit 1 for validation failures, audit findings, or malformed document or patch content, with diagnostics on stdout. Exit 2 for usage, authorization, or operational failure, with errors on stderr. Sort search and validation lists lexically by scope, name, case-folded milestone, and UUID. Sort an unset milestone as an empty string.
 
 			`doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
@@ -149,7 +149,7 @@ _proseNotes: [
 		name:  "board.validation.internal"
 		title: "Validating the index and access policy"
 		markdown: #"""
-			Apply the field rules to the board-owned JSON files `index/documents.json` and `index/access.json`. Enforce the encoded size and nesting limits during parsing, reject duplicate member names before decoding into Go structs or maps, and validate the resulting objects with built-in JSON Schema Draft 2020-12. Run the Go checks for references, derived paths, unique IDs and grant pairs, and the required human administrator. [JSON Schema validation keywords](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-validation-keywords-for-str) · [Go JSON decoding behavior](https://pkg.go.dev/encoding/json#hdr-Security_Considerations)
+			Apply the field rules to the board-owned JSON files `index/documents.json` and `index/access.json`. Enforce the encoded size and nesting limits during parsing, reject duplicate member names before decoding into Go structs or maps, and validate the resulting objects with built-in JSON Schema Draft 2020-12. Run the Go checks for references, derived paths, unique IDs, logical name keys, grant pairs, and the required human administrator. [JSON Schema validation keywords](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-validation-keywords-for-str) · [Go JSON decoding behavior](https://pkg.go.dev/encoding/json#hdr-Security_Considerations)
 
 			Validate the persisted access policy before trusting its grants and the persisted index before using its paths. Validate the prospective internal JSON before changing a document or replacing its metadata. Invalid metadata supplied via CLI flags exits 2 with a field-specific diagnostic and leaves files and index entries unchanged. Treat descriptive text and comments as data, escape control and layout characters when rendering them in terminal summaries, and keep stored paths confined to the board during filesystem access.
 			"""#
@@ -158,7 +158,11 @@ _proseNotes: [
 		name:  "board.index"
 		title: "Catalog and reconciliation"
 		markdown: #"""
-			`index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. A built-in schema validates structure, the UUID form, status, review comments, and digest. Go checks uniqueness of IDs and paths, that the scope and comment authors are registered, and that the stored path exactly matches the derived path. A malformed index blocks document selections and writes that would depend on it.
+			`index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. Validate structure with the built-in schema and check that IDs, paths, and logical name keys are unique. Go also checks scope and review author registration and exact path derivation. A malformed index blocks document selections and writes that would depend on it.
+
+			The logical name key is scope, case-folded milestone, and name. An unset milestone is its own namespace. Format and schema do not distinguish names in the same namespace. For example, `pagination` can coexist in `topic:specs` at milestones `v1 launch/Specs` and `v2/Specs`. Check uniqueness under the board lock before create or a milestone update, including clearing the milestone. A collision exits 2 before changing the file or index. A milestone update changes the logical lookup key and retains the filename and UUID.
+
+			`doc locate --in <scope> --name <name> [--milestone <text>]` finds the exact logical name after checking read access to the scope. A supplied milestone matches the entire value case-insensitively after trimming. Supply `--milestone ""` to select an unassigned milestone explicitly. With the flag omitted, look across milestones in that scope and return the UUID for a single indexed match. Multiple matches exit 2 with an ambiguity error that asks for a milestone. Check file presence before returning the UUID and use the same unavailable error for a missing or inaccessible match. Output the UUID on one line or an object with an `id` field in JSON mode.
 
 			`milestone` and `concept` are optional strings on each index entry. Writers choose their own values subject to the field rules. Use `/` to separate hierarchy segments. A concept has 1–48 characters total and each segment uses ASCII letters, as in `Cursor/Pagination`. A milestone has 1–64 characters total and allows digits, spaces, and version punctuation under the field rules, as in `v1 launch/Specs`. The length includes separators. Every segment must be nonempty. These labels are stored as metadata and have no effect on the derived document path.
 
@@ -176,7 +180,9 @@ _proseNotes: [
 
 			A review can link to any existing indexed document on the board that the reviewer can read. When returning review metadata, the CLI includes the locator only if the target is available to the reader. If the target is later deleted or the reader loses access, the index retains the stored locator and the CLI still returns the review text and outcome.
 
-			Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported entries. `index resync` adopts files only in registered managed scopes and assigns new UUIDs, draft status, and empty review comments. Newly adopted files have no milestone or concept. Resync preserves UUIDs, descriptions, milestones, concepts, and comments at surviving paths and preserves status except when bytes change for an archived document. It drops records for missing files and reports those removals and status resets. External renames appear as a missing path and a new file. Resync can rebuild a missing catalog with new IDs. It refuses to overwrite a malformed or unsupported index so its metadata remains recoverable. Use `doc validate --all` to check content in readable indexed documents.
+			Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported or conflicting entries. `index resync` preserves metadata at surviving paths subject to the archived-to-draft rule. It drops records for missing files and reports removals and status resets. Retain the UUID in an unindexed canonical filename. For a manually added `<name>.<format>` or `<name>.<schema-id>.<format>` file in a registered scope, allocate a UUID and rename it to the canonical filename. Adopted entries default to `draft` with empty reviews and no milestone or concept.
+
+			Before resync writes anything, reject duplicate UUIDs, a known UUID at a different path, or a logical name collision. Report the conflicting entries so an admin can resolve them. Rename newly adopted files atomically before publishing the reconciled index. If an index write fails, the UUIDs in any renamed files let a retry reuse them. A missing index can be rebuilt with the filename UUIDs, but milestones and other metadata come from the index. If same-name files would collide in the unassigned namespace, recover the index from a snapshot before reconciling. Resync preserves malformed or unsupported indexes for operator recovery.
 
 			All CLI operations affecting the board use an OS-backed lock released on process exit. Mutations take an exclusive lock. Reads hold a compatible lock from authorization through IO so an ACL change cannot interleave with a CLI read. Keep lock bookkeeping under `index/` and write replacements atomically at the individual-file level. Write document bytes before the corresponding index entry, and report partial success if the index write fails. Audit and resync recover file/catalog consistency after interrupted updates. Direct editors can create drift and must finish writes before a snapshot or destructive command.
 			"""#
@@ -196,13 +202,13 @@ _proseNotes: [
 		name:  "board.index.path-resolution"
 		title: "Internal locator and path resolution"
 		markdown: #"""
-			The validated document index is the source of the mapping in both directions. Use its unique UUID and canonical board-relative path as lookup keys. A UUID is assigned at creation or resync adoption and carries no path information. Perform lookups against the current index under the board lock.
+			The validated document index maps UUIDs to canonical board-relative paths in both directions. A UUID is stable and contains no location information. The filename carries the UUID so it can be recovered during resync. Perform lookups against the current index under the board lock.
 
-			**Locator to path.** Look up the UUID in the index, check the caller's permission for the requested operation on the entry's scope, then use the entry's validated path for root-confined filesystem access. Index validation has already checked that the path exactly matches the path derived from the entry's scope, name, format, and optional schema ID. Return the standard unavailable error for a missing or inaccessible document.
+			**Locator to path.** Look up the UUID in the index, check the caller's permission for the requested operation on the entry's scope, then use the entry's validated path for root-confined filesystem access. Index validation checks that the path exactly matches the path derived from the entry's scope, UUID, name, format, and optional schema ID. Return the standard unavailable error for a missing or inaccessible document.
 
-			**Path to locator.** Use a canonical path derived from validated logical fields or discovered under the board root during audit or resync. Check that it fits a registered scope and the managed filename rules, then look up that exact path in the index and use the entry's UUID. A path without an entry has no locator yet. Audit reports it as unindexed, and resync can adopt it and assign a new UUID.
+			**Path to locator.** Validate the canonical path under a registered scope and look up the exact path in the index. Audit reports an absent entry as unindexed. Resync can read the UUID from the filename and reuse it when adopting that document.
 
-			In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6f` with `agents/test/pagination-review.md`. Both conversions are internal storage functions. The public `doc locate` command takes logical fields and returns the UUID. It derives the canonical path and performs the reverse lookup internally, with read authorization and a file-presence check.
+			In the index example, the lookup pairs UUID `b69ac8e7-6755-4249-83ef-211daa24ab6f` with `agents/test/b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md`. Both conversions are internal storage functions. The public `doc locate` command looks up the logical name in the index and returns the UUID.
 			"""#
 	},
 	{

@@ -43,7 +43,7 @@ example_help_doc() {
   # Commands
   #   create    Create a document from stdin
   #   get       Write the stored bytes to stdout
-  #   locate    Resolve a logical document name to a UUID
+  #   locate    Resolve a document name in a scope and optional milestone
   #   patch     Apply a patch against an exact base revision
   #   update    Replace content or update metadata
   #   delete    Remove one document

@@ -11,6 +11,17 @@
       "status": "active",
       "reviewComments": {}
     },
+    "doc create (same name in a new milestone)": {
+      "id": "cf89eab1-3451-4e41-a6bb-0c6110a9d934",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Cursor pagination requirements for the v2 API",
+      "milestone": "v2/Specs",
+      "concept": "Cursor/Pagination",
+      "status": "draft",
+      "reviewComments": {}
+    },
     "doc locate": {
       "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb"
     },

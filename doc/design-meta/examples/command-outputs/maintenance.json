@@ -32,7 +32,7 @@
       "added": [
         {
           "id": "7ee9c97c-dcbb-4355-898a-2fbb18868362",
-          "path": "agents/test/local-results.csv",
+          "path": "agents/test/7ee9c97c-dcbb-4355-898a-2fbb18868362--local-results.csv",
           "status": "draft"
         }
       ],
@@ -45,7 +45,7 @@
       "candidates": [
         {
           "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
-          "path": "topics/specs/pagination.md"
+          "path": "topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md"
         }
       ],
       "skipped": []

@@ -52,6 +52,14 @@ example_unavailable_document() {
   # error: document unavailable
 }
 
+# Ambiguous document name
+# The two pagination documents in topic:specs have different milestones. Exits 2.
+example_ambiguous_locate() {
+  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination
+  # Expected stderr
+  # error: pagination matches multiple documents in topic:specs. Supply --milestone.
+}
+
 # Stale patch base
 # A changed base exits 2 and leaves the file and index untouched.
 example_stale_patch_base() {

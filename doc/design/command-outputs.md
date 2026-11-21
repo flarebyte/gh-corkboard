@@ -54,7 +54,7 @@ example_help_doc() {
   # Commands
   #   create    Create a document from stdin
   #   get       Write the stored bytes to stdout
-  #   locate    Resolve a logical document name to a UUID
+  #   locate    Resolve a document name in a scope and optional milestone
   #   patch     Apply a patch against an exact base revision
   #   update    Replace content or update metadata
   #   delete    Remove one document
@@ -369,6 +369,14 @@ example_unavailable_document() {
   # error: document unavailable
 }
 
+# Ambiguous document name
+# The two pagination documents in topic:specs have different milestones. Exits 2.
+example_ambiguous_locate() {
+  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination
+  # Expected stderr
+  # error: pagination matches multiple documents in topic:specs. Supply --milestone.
+}
+
 # Stale patch base
 # A changed base exits 2 and leaves the file and index untouched.
 example_stale_patch_base() {
@@ -451,6 +459,15 @@ example_doc_create() {
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
 
+# doc create with the same name in another milestone
+example_doc_create_v2() {
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
+    --description "Cursor pagination requirements for the v2 API" --milestone v2/Specs \
+    --concept Cursor/Pagination < pagination-v2.md
+  # Expected stdout
+  # Created cf89eab1-3451-4e41-a6bb-0c6110a9d934 (topic:specs / pagination, md, draft).
+}
+
 # doc get
 # Stdout contains exactly the stored Markdown bytes.
 example_doc_get() {
@@ -474,7 +491,8 @@ example_doc_get_json_pipe() (
 
 # doc locate
 example_doc_locate() {
-  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md
+  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination \
+    --milestone "v1 launch/Specs"
   # Expected stdout
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb
 }
@@ -584,6 +602,17 @@ example_doc_validate() {
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
       "status": "active",
+      "reviewComments": {}
+    },
+    "doc create (same name in a new milestone)": {
+      "id": "cf89eab1-3451-4e41-a6bb-0c6110a9d934",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Cursor pagination requirements for the v2 API",
+      "milestone": "v2/Specs",
+      "concept": "Cursor/Pagination",
+      "status": "draft",
       "reviewComments": {}
     },
     "doc locate": {
@@ -765,7 +794,7 @@ example_index_resync() {
   gh corkboard --as human:owner index resync
   # Expected stdout
   # Indexed 1 new document as draft.
-  # 7ee9c97c-dcbb-4355-898a-2fbb18868362  agents/test/local-results.csv
+  # 7ee9c97c-dcbb-4355-898a-2fbb18868362  agents/test/7ee9c97c-dcbb-4355-898a-2fbb18868362--local-results.csv
 }
 
 # index prune
@@ -775,7 +804,7 @@ example_index_prune() {
   # Expected stdout
   # Plan c7f4494f4450f8616639b3d733ab7257407c2d5f43adf751bfc8b0d2f12f07b3
   # 1 archived document is eligible for deletion.
-  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  topics/specs/pagination.md
+  # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md
 }
 
 # index prune --apply
@@ -798,7 +827,7 @@ example_snapshot_create() {
   # .gh-corkboard/agents/implementation/
   # .gh-corkboard/agents/specs/
   # .gh-corkboard/agents/test/
-  # .gh-corkboard/agents/test/pagination-review.md
+  # .gh-corkboard/agents/test/b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md
   # .gh-corkboard/index/
   # .gh-corkboard/index/access.json
   # .gh-corkboard/index/documents.json
@@ -809,7 +838,8 @@ example_snapshot_create() {
   # .gh-corkboard/skills/
   # .gh-corkboard/topics/
   # .gh-corkboard/topics/specs/
-  # .gh-corkboard/topics/specs/pagination.md
+  # .gh-corkboard/topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md
+  # .gh-corkboard/topics/specs/cf89eab1-3451-4e41-a6bb-0c6110a9d934--pagination.md
 }
 ```
 
@@ -852,7 +882,7 @@ example_snapshot_create() {
       "added": [
         {
           "id": "7ee9c97c-dcbb-4355-898a-2fbb18868362",
-          "path": "agents/test/local-results.csv",
+          "path": "agents/test/7ee9c97c-dcbb-4355-898a-2fbb18868362--local-results.csv",
           "status": "draft"
         }
       ],
@@ -865,7 +895,7 @@ example_snapshot_create() {
       "candidates": [
         {
           "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
-          "path": "topics/specs/pagination.md"
+          "path": "topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md"
         }
       ],
       "skipped": []

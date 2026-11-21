@@ -11,6 +11,15 @@ example_doc_create() {
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
 
+# doc create with the same name in another milestone
+example_doc_create_v2() {
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
+    --description "Cursor pagination requirements for the v2 API" --milestone v2/Specs \
+    --concept Cursor/Pagination < pagination-v2.md
+  # Expected stdout
+  # Created cf89eab1-3451-4e41-a6bb-0c6110a9d934 (topic:specs / pagination, md, draft).
+}
+
 # doc get
 # Stdout contains exactly the stored Markdown bytes.
 example_doc_get() {
@@ -34,7 +43,8 @@ example_doc_get_json_pipe() (
 
 # doc locate
 example_doc_locate() {
-  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md
+  gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination \
+    --milestone "v1 launch/Specs"
   # Expected stdout
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb
 }

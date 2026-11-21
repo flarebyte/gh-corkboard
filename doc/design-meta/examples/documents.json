@@ -6,7 +6,7 @@
       "scope": "agent:test",
       "name": "pagination-review",
       "format": "md",
-      "path": "agents/test/pagination-review.md",
+      "path": "agents/test/b69ac8e7-6755-4249-83ef-211daa24ab6f--pagination-review.md",
       "description": "Test review of the cursor pagination spec",
       "status": "draft",
       "reviewComments": {},
@@ -17,7 +17,7 @@
       "scope": "topic:specs",
       "name": "pagination",
       "format": "md",
-      "path": "topics/specs/pagination.md",
+      "path": "topics/specs/29b4dd81-af57-4c98-b3f0-ff0bf66da7bb--pagination.md",
       "description": "Requirements for cursor pagination",
       "milestone": "v1 launch/Specs",
       "concept": "Cursor/Pagination",
@@ -34,6 +34,19 @@
         }
       },
       "sha256": "bf706ffa8256beee042e4d36fd262ed2afed5c0408962814edcaddc83be4f44a"
+    },
+    {
+      "id": "cf89eab1-3451-4e41-a6bb-0c6110a9d934",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "path": "topics/specs/cf89eab1-3451-4e41-a6bb-0c6110a9d934--pagination.md",
+      "description": "Cursor pagination requirements for the v2 API",
+      "milestone": "v2/Specs",
+      "concept": "Cursor/Pagination",
+      "status": "approved",
+      "reviewComments": {},
+      "sha256": "4ce5fb589b68ce9c3c8812d1b222e24ca3cb5926d5176425a8b7af3ae0c8b736"
     }
   ]
 }

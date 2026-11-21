@@ -18,11 +18,12 @@ example_review_workflow() (
   gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
     --description "Requirements for cursor pagination" --milestone "v1 launch/Specs" --concept Cursor/Pagination \
     --status active --json < pagination.md
-  doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
+  doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination \
+    --milestone "v1 launch/Specs")
   gh corkboard --as agent:implementation doc get "$doc_id"
   gh corkboard --as agent:specs doc update "$doc_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
   gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
-  review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
+  review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review)
   gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
   gh corkboard --as agent:implementation index search --in topic:specs --status approved \
     --milestone "v1 launch/specs" --concept cursor/pagination --json

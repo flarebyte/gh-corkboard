@@ -15,15 +15,15 @@ command,access,contract,concept
 `schema list [--format <format>]`,Registered principal,List registered schemas ordered by format and ID,board.validation
 `schema update <format> <schema-id>`,Admin,Replace an existing schema with a valid definition from stdin,board.validation
 `schema delete <format> <schema-id>`,Admin,Delete an unused schema,board.validation
-`doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--preserve-row-order]`,Scope write plus status when supplied,Format stdin content before saving and return the new document UUID,board.formatting
+`doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--preserve-row-order]`,Scope write plus status when supplied,Create a unique name within the selected scope and milestone and return its UUID,board.formatting
 `doc get <doc-id>`,Scope read,Write stored document bytes to stdout,board.documents
-`doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]`,Scope read,Return the UUID for one exact logical document name,board.documents
+`doc locate --in <scope> --name <name> [--milestone <text>]`,Scope read,Resolve an exact name within a scope and require the milestone when the name is ambiguous,board.documents
 `doc patch <doc-id> --expect <sha256> [--preserve-row-order]`,Scope write,Apply a patch from stdin to the exact base revision and format the result,board.patching
 `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass|warning|fail> [--review-locator <doc-id>]|--clear-review-comment]`,"Scope write for content, description, milestone or concept. Scope status for lifecycle or own review.",Apply requested content or metadata updates and report any formatting changes to replacement bytes,board.formatting
 `doc delete <doc-id>`,Topic delete or board admin,Delete one document and remove its index entry while retaining the folder,board.documents
 `doc validate <doc-id|--all>`,Scope read,Validate the selected document or all readable indexed documents,board.validation
 `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>] [--format <table|csv|json>]`,Registered principal,Search readable metadata by scope and other filters with compact table or CSV output and full JSON output,board.index
 `index audit`,Admin,Report filesystem and index discrepancies without changing board data,board.index
-`index resync`,Admin,Reconcile the catalog with valid managed locations and preserve surviving metadata,board.index
+`index resync`,Admin,Reconcile the catalog with managed locations and preserve metadata and filename UUIDs,board.index
 `index prune [--apply --expect <plan-id>]`,Admin,Preview or apply removal of archived documents,board.retention
 `snapshot create [--expect <plan-id>]`,Admin,Write a ZIP of the board to stdout and optionally verify a prune plan first,board.retention
