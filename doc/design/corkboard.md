@@ -8,7 +8,7 @@ Proposed specification for a local project corkboard and messaging system.
 
 #### Identity and access policy
 
-Every board command requires a global `--as <principal>` selector before the command. Principals are `human:<id>`, `agent:<id>`, or `skill:<id>`. The CLI checks registration and resolves the principal's role through `index/access.json`. Help and version output are available without a principal. On first initialization, the supplied human becomes the first administrator. On an existing board, `init` requires an administrator. A missing or damaged policy on an existing board blocks access and must be recovered by the operator. A repeated `init` cannot claim that board.
+Every board command requires a global `--as <principal>` selector before the command. Principals are `human:<id>`, `agent:<id>`, or `skill:<id>`. The CLI checks registration and resolves the principal's role through `index/access.json`. Help and version output are available without a principal. On first initialization, the supplied human becomes the first administrator. On an existing board, `init` requires an administrator. A missing or damaged policy on an existing board blocks access and leaves the board intact for operator inspection. A repeated `init` cannot claim that board.
 
 The policy is plaintext JSON validated against a built-in version-1 schema. Each principal entry has an ID and an optional role. After schema validation, the CLI resolves an omitted `role` to `member`. An explicit role must be valid and non-null. Check unique principal and topic IDs, one grant per scope and principal with a nonempty set of distinct permissions, registered grant subjects and scopes, and at least one administrator after applying defaults. Only a human can hold `admin`.
 
@@ -269,7 +269,11 @@ A scope is one container for documents and permissions. It can be an agent chann
         └── cf89eab1-3451-4e41-a6bb-0c6110a9d934--pagination.md
 ```
 
-`init` creates the five top-level directories, the three schema format directories, a version-1 access policy and an empty version-1 index on first initialization. It adds `/.gh-corkboard/` as the final root `.gitignore` rule if needed, verifies the rule is effective, and reports tracked corkboard paths. Repeated initialization preserves existing board data.
+Serialize `init` calls per worktree with an OS-backed lock independent of the board directory. If `.gh-corkboard` already exists, check the current access policy under the board lock and require an existing administrator before changing anything. An authorized rerun can repair the ignore rule and preserves all board data.
+
+For first initialization, build the five top-level directories, the three schema format directories, a version-1 access policy and an empty version-1 index in a private temporary sibling directory. Validate the policy and index there. If needed, update the root `.gitignore` atomically, preserving its existing contents and adding `/.gh-corkboard/` as the final rule. Verify the rule is effective before publishing. Publish the staged directory as `.gh-corkboard` in one atomic operation that refuses to replace an existing entry. Report any tracked corkboard paths.
+
+An interruption before publication leaves the board absent and may leave the ignore rule or a staging directory. A retry uses fresh staging and only trusts the canonical board path. Clean up the current staging directory on handled failure. An interruption after publication leaves a complete board, and the same administrator can rerun `init` safely. Test retries after interruption just before and just after publication, and verify that concurrent first-time initializers cannot overwrite the winning policy or add a second bootstrap administrator.
 
 For create, the caller supplies a registered scope, a name, a format and optionally a schema ID. Accept slugs matching `[a-z0-9][a-z0-9_-]{0,63}` and reject platform-reserved names. Allocate a UUIDv4 and build the path inside the scope directory. The basename is `<uuid>--<name>.<format>` or `<uuid>--<name>.<schema-id>.<format>`. The UUID makes the filename unique while the name keeps it readable. Validate the derived path every time the index is loaded and use root-confined filesystem operations that reject symlinks and special files. Anchor scope access so a replaced directory cannot redirect IO to a different scope. [Go traversal-resistant file APIs](https://go.dev/blog/osroot)
 
@@ -286,7 +290,7 @@ Use a document's UUIDv4 to get, modify, delete, validate, or reference it. `doc 
 | access | command | concept | contract |
 | --- | --- | --- | --- |
 | Public | `help [<command> ...]` | board.cli | Show top-level or command-specific help without opening a board |
-| Human bootstrap or existing admin | `init` | board.cli | Initialize the worktree board and ensure a root ignore rule |
+| Human bootstrap or existing admin | `init` | board.cli | Publish a complete worktree board after verifying the root ignore rule. Authorized retries preserve board data. |
 | Registered principal | `access whoami` | board.access | Return the selected principal and its effective permissions by scope |
 | Admin | `access principal add <principal> [--role <member\|admin>]` | board.access | Register a principal and provision its folder for an agent or skill |
 | Admin | `access principal list` | board.access | List registered principals and their roles |
@@ -496,7 +500,7 @@ A review can link to any existing indexed document on the board that the reviewe
 
 Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported or conflicting entries. `index resync` preserves metadata at surviving paths subject to the archived-to-draft rule. It drops records for missing files and reports removals and status resets. Retain the UUID in an unindexed canonical filename. For a manually added `<name>.<format>` or `<name>.<schema-id>.<format>` file in a registered scope, allocate a UUID and rename it to the canonical filename. Adopted entries default to `draft` with empty reviews and no milestone, concept, or assignee.
 
-Before resync writes anything, reject duplicate UUIDs, a known UUID at a different path, or a logical name collision. Report the conflicting entries so an admin can resolve them. Rename newly adopted files atomically before publishing the reconciled index. If an index write fails, the UUIDs in any renamed files let a retry reuse them. A missing index can be rebuilt with the filename UUIDs, but milestones and other metadata come from the index. If same-name files would collide in the unassigned namespace, recover the index from a snapshot before reconciling. Resync preserves malformed or unsupported indexes for operator recovery.
+Before resync writes anything, reject duplicate UUIDs, a known UUID at a different path, or a logical name collision. Report the conflicting entries so an admin can resolve them. Rename newly adopted files atomically before publishing the reconciled index. If an index write fails, the UUIDs in any renamed files let a retry reuse them. A missing index can be rebuilt with the filename UUIDs when the inferred name keys are unique. Milestones and other index-only metadata may be lost. If same-name files would collide in the unassigned namespace, report the collision and leave the files intact for operator inspection. Resync preserves malformed or unsupported indexes for operator inspection.
 
 All CLI operations affecting the board use an OS-backed lock released on process exit. Mutations take an exclusive lock. Reads hold a compatible lock from authorization through IO so an ACL change cannot interleave with a CLI read. Keep lock bookkeeping under `index/` and write replacements atomically at the individual-file level. Write document bytes before the corresponding index entry, and report partial success if the index write fails. Audit and resync recover file/catalog consistency after interrupted updates. Direct editors can create drift and must finish writes before a snapshot or destructive command.
 
@@ -657,6 +661,8 @@ Validate the persisted access policy before trusting its grants and the persiste
 An admin uses `index prune` to preview archived documents whose recorded digest still matches the disk file. The preview reports skipped archived entries with missing or changed files and emits a deterministic plan ID derived from the sorted candidate IDs, paths and digests. Apply requires `--apply --expect <plan-id>`. Recompute the plan under the board lock and reject stale input before deleting. Recheck each candidate immediately before unlinking. If any unlink fails, stop, reconcile entries for files successfully removed, and report completed and remaining IDs. Report reconciliation failures so `index audit` can identify the drift. Prune eligibility depends on archived status and matching bytes.
 
 `snapshot create` writes the ZIP to stdout and can archive a board with index drift or invalid documents. ZIP entries start at `.gh-corkboard/` and include the five directories and their stored files, including the access policy. Exclude CLI lock bookkeeping and temporary files. Fail on unsafe entries or output errors. `--expect <plan-id>` compares the current prune plan before the CLI emits bytes. For a pre-prune archive, save the ZIP outside the board and apply the same plan only after the snapshot command succeeds. Prune checks the plan again, so changes to candidates between commands invalidate it. Discard incomplete output after an archive failure.
+
+Board data is expected to be transient. V1 snapshots support offline inspection and pre-prune archiving. Snapshot restoration is deferred.
 
 #### Snapshot and prune example
 
