@@ -1,0 +1,7 @@
+id,actor,workflow,outcome,concept
+handoff,Specification agent,Publish a spec in topics/specs and leave a pointer under agents/implementation,The implementation agent finds its handoff and follows the shared spec,board.communication
+self-note,Any agent,Write a Markdown note under its own agent folder,The agent can recover local context in a later session,board.communication
+skill-reference,Agent maintaining a skill,Save reusable guidance under `skills/<skill-id>`,Other agents can find guidance by path or description,board.communication
+review,Human reviewer,Search by review status and open matching documents,The reviewer can read the original bytes and update the lifecycle,board.index
+draft,Document author,Save an incomplete schema-bound document and run validation,The document remains editable and the validator reports actionable diagnostics,board.validation
+retire,Agent or human,Mark reviewed material obsolete then preview and apply cleanup with a ZIP snapshot,The selected files are removed and the prior board can be inspected offline,board.retention

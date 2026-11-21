@@ -1,0 +1,17 @@
+command,contract,concept
+`init`,Initialize the worktree board and ensure a root ignore rule,board.cli
+`schema create <format> <id> --from <file|->`,Register a new schema and reject invalid schema definitions,board.validation
+`schema get <format> <id>`,Write the stored schema bytes to stdout,board.validation
+`schema list [--format <format>]`,List registered schemas ordered by format and ID,board.validation
+`schema update <format> <id> --from <file|->`,Replace an existing definition and let affected documents be revalidated,board.validation
+`schema delete <format> <id>`,Delete an unused schema and report referencing files if any exist,board.validation
+`doc create <path> --from <file|-> [--description <text>] [--status <status>]`,Create a document and register its metadata,board.documents
+`doc get <path>`,Write the stored document bytes to stdout,board.documents
+`doc update <path> [--from <file|->] [--description <text>] [--status <status>]`,Replace bytes or metadata for an existing document,board.documents
+`doc delete <path>`,Delete one explicitly named document and remove its index entry,board.documents
+`doc validate <path|--all>`,Check document syntax and applicable schemas and return structured per-document results,board.validation
+`index search [--prefix <path>] [--status <status>] [--query <text>]`,Filter indexed paths and descriptions without reading document bodies,board.index
+`index audit`,Report filesystem and index discrepancies without modifying either,board.index
+`index resync`,Reconcile metadata with the filesystem while preserving surviving descriptions,board.index
+`index prune [--apply --expect <plan-id>] [--snapshot <zip>]`,Preview or apply removal of obsolete documents,board.retention
+`snapshot create --output <zip>`,Archive the current board outside the board directory,board.retention

@@ -1,0 +1,6 @@
+status,meaning
+draft,Work in progress or newly discovered file
+active,Current handoff note or reference
+review,Ready for human or agent review
+resolved,Handoff completed or review closed
+obsolete,Explicitly eligible for bulk deletion if the content is unchanged
