@@ -50,6 +50,10 @@ interface DocumentMetadata {
   reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
 }
 
+interface DocumentUpdateResult extends DocumentMetadata {
+  formattingChanged?: boolean; // Present for content updates
+}
+
 interface Index {
   version: 1;
   documents: IndexEntry[];

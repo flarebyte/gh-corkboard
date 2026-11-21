@@ -68,6 +68,8 @@ _proseNotes: [
 
 			Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document content supplied to a write. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
 
+			`doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
+
 			Find default text, JSON, raw streams, and representative diagnostics in the [CLI output examples](command-outputs.md).
 
 			```sh
@@ -107,6 +109,8 @@ _proseNotes: [
 			Reject malformed JSON or CSV, including duplicate JSON keys or malformed CSV headers, and invalid UTF-8 in any format before writing the file or index. Report diagnostics against the supplied input. A syntactically valid draft can be saved even when it would fail its declared schema. `doc validate` checks schema conformance separately.
 
 			Compute the index digest from the formatted bytes. During an update, compare those bytes to the current file and rewrite the file only if they differ. Apply any requested metadata changes, and use the archived-to-draft rule when the stored content changes.
+
+			For a successful `doc update --stdin`, set `formattingChanged` in the JSON result to whether the formatter changed the supplied bytes. Include it even when the formatted output already matches the file. The default text output adds `Formatting changed the supplied bytes.` when the value is true. Metadata-only updates omit the field.
 			"""#
 	},
 	{

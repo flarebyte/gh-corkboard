@@ -326,6 +326,15 @@ example_doc_get() {
   # - Return the next cursor when more results are available.
 }
 
+# doc get piped to jq
+example_doc_get_json_pipe() (
+  set -o pipefail
+  gh corkboard --as agent:implementation doc get fa334448-c8de-42b0-b013-ebc87dc5f7ae |
+    jq '.pageSize'
+  # Expected stdout from jq
+  # 100
+)
+
 # doc locate
 example_doc_locate() {
   gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md
@@ -338,6 +347,15 @@ example_doc_update() {
   gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb. Status: approved. Review by agent:test: pass.
+}
+
+# doc update with replacement content
+example_doc_update_content() {
+  printf '%s\n' '{"title":"Cursor pagination","pageSize":100}' |
+    gh corkboard --as agent:specs doc update fa334448-c8de-42b0-b013-ebc87dc5f7ae --stdin
+  # Expected stdout
+  # Updated document fa334448-c8de-42b0-b013-ebc87dc5f7ae.
+  # Formatting changed the supplied bytes.
 }
 
 # doc delete
@@ -394,6 +412,17 @@ example_doc_validate() {
         }
       }
     },
+    "doc update --stdin": {
+      "id": "fa334448-c8de-42b0-b013-ebc87dc5f7ae",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "json",
+      "schemaId": "spec",
+      "description": "Requirements for cursor pagination",
+      "status": "draft",
+      "reviewComments": {},
+      "formattingChanged": true
+    },
     "doc delete": {
       "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
       "deleted": true
@@ -407,6 +436,12 @@ example_doc_validate() {
           "diagnostics": []
         }
       ]
+    }
+  },
+  "rawStdout": {
+    "doc get (JSON document)": {
+      "pageSize": 100,
+      "title": "Cursor pagination"
     }
   }
 }

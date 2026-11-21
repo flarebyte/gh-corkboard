@@ -130,7 +130,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 | Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Format stdin content before saving and return the new document UUID |
 | Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
 | Scope read | `doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]` | board.documents | Return the UUID for one exact logical document name |
-| Scope write for content or description and scope status for lifecycle or own review | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Format replacement content before saving and apply the requested index changes |
+| Scope write for content or description and scope status for lifecycle or own review | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Format replacement content before saving and report whether formatting changed the supplied bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
 | Registered principal | `index search [--in <scope>] [--status <status>] [--query <text>]` | board.index | Search metadata of readable documents and return logical identifiers |
@@ -144,6 +144,8 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 Commands in the table follow `gh corkboard --as <principal>`. They address board resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
 Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document content supplied to a write. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
+
+`doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
 Find default text, JSON, raw streams, and representative diagnostics in the [CLI output examples](command-outputs.md).
 
@@ -203,6 +205,8 @@ For CSV, sort data records by the first column when its header is `id` or `name`
 Reject malformed JSON or CSV, including duplicate JSON keys or malformed CSV headers, and invalid UTF-8 in any format before writing the file or index. Report diagnostics against the supplied input. A syntactically valid draft can be saved even when it would fail its declared schema. `doc validate` checks schema conformance separately.
 
 Compute the index digest from the formatted bytes. During an update, compare those bytes to the current file and rewrite the file only if they differ. Apply any requested metadata changes, and use the archived-to-draft rule when the stored content changes.
+
+For a successful `doc update --stdin`, set `formattingChanged` in the JSON result to whether the formatter changed the supplied bytes. Include it even when the formatted output already matches the file. The default text output adds `Formatting changed the supplied bytes.` when the value is true. Metadata-only updates omit the field.
 
 #### Formatting rules by format
 
@@ -366,6 +370,10 @@ interface DocumentMetadata {
   description: string;
   status: Status;
   reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
+}
+
+interface DocumentUpdateResult extends DocumentMetadata {
+  formattingChanged?: boolean; // Present for content updates
 }
 
 interface Index {

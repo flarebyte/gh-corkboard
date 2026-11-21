@@ -31,6 +31,17 @@
         }
       }
     },
+    "doc update --stdin": {
+      "id": "fa334448-c8de-42b0-b013-ebc87dc5f7ae",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "json",
+      "schemaId": "spec",
+      "description": "Requirements for cursor pagination",
+      "status": "draft",
+      "reviewComments": {},
+      "formattingChanged": true
+    },
     "doc delete": {
       "id": "b69ac8e7-6755-4249-83ef-211daa24ab6f",
       "deleted": true
@@ -44,6 +55,12 @@
           "diagnostics": []
         }
       ]
+    }
+  },
+  "rawStdout": {
+    "doc get (JSON document)": {
+      "pageSize": 100,
+      "title": "Cursor pagination"
     }
   }
 }
