@@ -1,0 +1,4 @@
+format,formatting rules
+Markdown,"Normalize line endings to LF and ensure a final newline for nonempty documents. Preserve author layout including paragraph wrapping, line breaks created by trailing spaces, list indentation, and the contents and indentation of code blocks apart from newline normalization."
+JSON,"Indent with two spaces and use one final newline. Sort object keys lexicographically at every level. Preserve array order, string values, and the numeric token spelling so formatting cannot lose precision."
+CSV,"Use comma delimiters and LF record endings. Quote fields containing commas, double quotes or line breaks, and escape embedded quotes by doubling them. Preserve header order and cell text, including whitespace, leading zeros, and newlines inside quoted fields. Quote an empty cell when it is the only field in a record so the record survives parsing."

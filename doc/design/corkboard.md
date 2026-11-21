@@ -64,7 +64,7 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
 | Any agent | board.communication | self-note | The agent can recover local context in a later session | Write under its own agent scope |
 | Skill principal | board.access | skill-reference | The agents can find guidance by scope or description | Ask a board admin to grant read access to selected agents |
 | Specification and test agents | board.index | review | Readers can see the comments and open linked documents where they have read access | Record separate review outcomes and link to supporting documents by UUID |
-| Document author | board.validation | draft | The document remains editable and the validator reports actionable diagnostics | Save an incomplete schema-bound document and run validation |
+| Document author | board.validation | draft | The draft is formatted on write and the validator reports the missing fields | Save a well-formed draft missing required schema fields and run validation |
 | Board administrator | board.retention | retire | The selected files are removed and the prior board can be inspected offline | Preview archived documents then save a ZIP snapshot before applying cleanup |
 
 ### Workspace
@@ -127,10 +127,10 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 | Registered principal | `schema list [--format <format>]` | board.validation | List registered schemas ordered by format and ID |
 | Admin | `schema update <format> <schema-id>` | board.validation | Replace an existing schema with a valid definition from stdin |
 | Admin | `schema delete <format> <schema-id>` | board.validation | Delete an unused schema |
-| Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>]` | board.documents | Read bytes from stdin and return the new document UUID |
+| Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Format stdin content before saving and return the new document UUID |
 | Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
 | Scope read | `doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]` | board.documents | Return the UUID for one exact logical document name |
-| Scope write for content or description and scope status for lifecycle or own review | `doc update <doc-id> [--stdin] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.documents | Apply the supplied changes to the document and index |
+| Scope write for content or description and scope status for lifecycle or own review | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Format replacement content before saving and apply the requested index changes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
 | Registered principal | `index search [--in <scope>] [--status <status>] [--query <text>]` | board.index | Search metadata of readable documents and return logical identifiers |
@@ -143,7 +143,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 
 Commands in the table follow `gh corkboard --as <principal>`. They address board resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
-Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit original bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures or audit findings. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
+Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document content supplied to a write. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
 
 ```sh
 gh corkboard --as human:owner init
@@ -168,7 +168,7 @@ gh corkboard --as agent:implementation doc get "$review_id"
 gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
 ```
 
-Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Also exercise read filtering, malformed policy and index data, symlink rejection, invalid drafts, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Verify formatting on both content write commands, CSV order preservation when requested, and unchanged file and index state when syntax is invalid. Also exercise read filtering, malformed policy and index data, symlink rejection, well-formed drafts that fail schema validation, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
 
 ## Specification sources
 
@@ -183,11 +183,32 @@ Exercise scoped create and denied cross-scope mutations. Verify that an admin ca
 | Go extension command interface | board.cli | board |
 | Agent handoffs self-notes and human review | board.communication | board |
 | Document formats names and lifecycle | board.documents | board |
+| Automatic formatting on document writes | board.formatting | board |
 | Metadata search and filesystem reconciliation | board.index | board |
 | Obsolete documents and snapshots | board.retention | board |
 | Schema registry and validation profiles | board.validation | board |
 
 ## Storage and validation
+
+### Document formatting
+
+#### Automatic formatting on write
+
+Every CLI write of document content runs the format-specific formatter before saving. `doc create` formats stdin using the requested format. `doc update --stdin` formats replacement bytes using the indexed document format. Metadata-only updates and index resync operate on the index. Use deterministic and idempotent rules so the same content and formatting options always produce the same bytes.
+
+For CSV, sort data records by the first column when its header is `id` or `name`, matched case-insensitively. Compare cell text lexicographically and case-sensitively, keeping the input order for equal keys. For example, IDs `b2` and `a1` appear as `a1` and `b2` after formatting. For other first headers, preserve row order. Use `--preserve-row-order` on a CSV content write when the order carries meaning, including when a schema constrains row positions. It keeps the supplied row order and applies the other CSV formatting rules. Using it for another format or without content to write is a usage error.
+
+Reject malformed JSON or CSV, including duplicate JSON keys or malformed CSV headers, and invalid UTF-8 in any format before writing the file or index. Report diagnostics against the supplied input. A syntactically valid draft can be saved even when it would fail its declared schema. `doc validate` checks schema conformance separately.
+
+Compute the index digest from the formatted bytes. During an update, compare those bytes to the current file and rewrite the file only if they differ. Apply any requested metadata changes, and use the archived-to-draft rule when the stored content changes.
+
+#### Formatting rules by format
+
+| format | formatting rules |
+| --- | --- |
+| Markdown | Normalize line endings to LF and ensure a final newline for nonempty documents. Preserve author layout including paragraph wrapping, line breaks created by trailing spaces, list indentation, and the contents and indentation of code blocks apart from newline normalization. |
+| JSON | Indent with two spaces and use one final newline. Sort object keys lexicographically at every level. Preserve array order, string values, and the numeric token spelling so formatting cannot lose precision. |
+| CSV | Use comma delimiters and LF record endings. Quote fields containing commas, double quotes or line breaks, and escape embedded quotes by doubling them. Preserve header order and cell text, including whitespace, leading zeros, and newlines inside quoted fields. Quote an empty cell when it is the only field in a record so the record survives parsing. |
 
 ### Index and lifecycle
 
@@ -389,7 +410,7 @@ The CSV projection supports required columns, header order, row count and string
 
 The Markdown projection supports required headings, order and multiplicity. For example, `## Acceptance **criteria**` yields the heading shown in the Markdown projection example. A schema can check for that entry with `contains` or enforce a sequence with `prefixItems`. Markdown prose and section body content remain outside the v1 schema contract. [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/)
 
-Every document remains writable even when validation would fail. On explicit validation, parse the native format first, report syntax or projection errors, then evaluate the declared schema when present. A well-formed plain document returns `schemaless`. Bound documents return `valid` or `invalid`. Report the instance path and source coordinates where available. CommonMark accepts free-form text. Schemaless Markdown therefore only requires decodable UTF-8. The index and access policy use built-in schemas and additional Go checks for uniqueness and references. User schema operations cannot alter those contracts.
+Well-formed documents remain writable even when schema validation would fail. On explicit validation, parse the native format first, report syntax or projection errors, then evaluate the declared schema when present. A well-formed plain document returns `schemaless`. Bound documents return `valid` or `invalid`. Report the instance path and source coordinates where available. CommonMark accepts free-form text. Schemaless Markdown therefore only requires decodable UTF-8. The index and access policy use built-in schemas and additional Go checks for uniqueness and references. User schema operations cannot alter those contracts.
 
 CUE supports composition and constraints across fields, and exposes validation and JSON Schema conversion through its Go API. Both engines would consume the same CSV and Markdown projections. Keeping one native JSON Schema engine gives authors reusable JSON artifacts for documents and the index. Revisit CUE if real board schemas need shared constraints or cross-field relationships that become hard to express in JSON Schema. [CUE and JSON Schema](https://cuelang.org/docs/concept/how-cue-works-with-json-schema/)
 

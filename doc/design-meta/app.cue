@@ -34,6 +34,9 @@ reports: [{
 	}, {
 		title: "Storage and validation"
 		sections: [{
+			title: "Document formatting"
+			notes: ["board.formatting", "board.formatting.formats"]
+		}, {
 			title: "Schema registry and projections"
 			notes: [
 				"board.validation",
@@ -63,6 +66,7 @@ notes: list.Concat([[
 	{name: "board.commands", title: "Command reference", filepath: "examples/commands.csv"},
 	{name: "board.concepts", title: "Concept registry", filepath: "examples/concepts.csv"},
 	{name: "board.contracts", title: "Data and diagnostic shapes", filepath: "examples/contracts.ts"},
+	{name: "board.formatting.formats", title: "Formatting rules by format", filepath: "examples/document-formatting.csv"},
 	{name: "board.index.example", title: "Document index example", filepath: "examples/documents.json"},
 	{name: "board.validation.projection.csv", title: "CSV projection example", filepath: "examples/csv-projection.json"},
 	{name: "board.lifecycle", title: "Lifecycle statuses", filepath: "examples/lifecycle.csv"},
