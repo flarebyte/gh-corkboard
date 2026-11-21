@@ -120,22 +120,26 @@ func (p accessPolicy) permissions(actor, scope string) []string {
 
 func (a *Access) Whoami() Identity {
 	identity := Identity{Principal: a.actor, Role: a.policy.role(a.actor), Scopes: []ScopePermissions{}}
-	scopes := make([]string, 0, len(a.policy.Topics)+len(a.policy.Principals))
-	for _, topic := range a.policy.Topics {
-		scopes = append(scopes, "topic:"+topic)
-	}
-	for _, entry := range a.policy.Principals {
-		if !strings.HasPrefix(entry.ID, "human:") {
-			scopes = append(scopes, entry.ID)
-		}
-	}
-	slices.Sort(scopes)
-	for _, scope := range scopes {
+	for _, scope := range a.policy.scopes() {
 		if permissions := a.policy.permissions(a.actor, scope); len(permissions) > 0 {
 			identity.Scopes = append(identity.Scopes, ScopePermissions{Scope: scope, Permissions: permissions})
 		}
 	}
 	return identity
+}
+
+func (p accessPolicy) scopes() []string {
+	scopes := make([]string, 0, len(p.Topics)+len(p.Principals))
+	for _, topic := range p.Topics {
+		scopes = append(scopes, "topic:"+topic)
+	}
+	for _, entry := range p.Principals {
+		if !strings.HasPrefix(entry.ID, "human:") {
+			scopes = append(scopes, entry.ID)
+		}
+	}
+	slices.Sort(scopes)
+	return scopes
 }
 
 func (a *Access) Principals() ([]principal, error) {
@@ -188,8 +192,8 @@ func orderedPermissions(values []string) []string {
 }
 
 func (a *Access) save(next accessPolicy, change func() (func() error, error)) error {
-	if !a.edit || a.policy.role(a.actor) != "admin" {
-		return errors.New("operation requires a board administrator and an exclusive board lock")
+	if err := a.requireAdminEdit(); err != nil {
+		return err
 	}
 	data, err := json.MarshalIndent(next, "", "  ")
 	if err != nil {

@@ -178,7 +178,7 @@ func (d *Documents) applyUpdate(doc *document, o UpdateOptions) error {
 }
 
 func (d *Documents) openUpdateSource(doc document, expected *string, readBytes bool) (*os.Root, []byte, error) {
-	scope, err := d.scopeRoot(doc.Scope)
+	scope, err := d.access.scopeRoot(doc.Scope)
 	if os.IsNotExist(err) {
 		return nil, nil, documentUnavailable
 	}

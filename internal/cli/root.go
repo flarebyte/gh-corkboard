@@ -34,7 +34,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var jsonOutput bool
 	root.PersistentFlags().StringVar(&actor, "as", "", "Select the caller for a board command")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Emit JSON for supported results")
-	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput), docCommand(&actor, &jsonOutput))
+	root.AddCommand(initCommand(&actor, &jsonOutput), accessCommand(&actor, &jsonOutput), docCommand(&actor, &jsonOutput), schemaCommand(&actor, &jsonOutput))
 	var helpTarget *cobra.Command
 	root.SetHelpCommand(&cobra.Command{
 		Use:   "help [<command> ...]",
@@ -55,6 +55,9 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	})
 
 	if cmd, err := root.ExecuteC(); err != nil {
+		if errors.Is(err, errFindings) {
+			return 1
+		}
 		var input *docformat.InputError
 		if errors.As(err, &input) {
 			if reportErr := writeInputDiagnostic(stdout, jsonOutput, input); reportErr == nil {
@@ -92,7 +95,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 
 func writeInputDiagnostic(out io.Writer, asJSON bool, input *docformat.InputError) error {
-	message := input.Error()
+	message := singleLine(input.Error())
 	if errors.Is(input, io.EOF) || errors.Is(input, io.ErrUnexpectedEOF) {
 		message = "unexpected end of input"
 	}
@@ -104,6 +107,9 @@ func writeInputDiagnostic(out io.Writer, asJSON bool, input *docformat.InputErro
 		}})
 	}
 	format := strings.ToUpper(input.Format)
+	if format == "SCHEMA" {
+		format = "schema"
+	}
 	if format == "MD" {
 		format = "Markdown"
 	}

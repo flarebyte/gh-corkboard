@@ -150,7 +150,7 @@ func (d *Documents) Create(o CreateOptions, input io.Reader) (DocumentMetadata, 
 		return empty, err
 	}
 
-	scope, err := d.scopeRoot(doc.Scope)
+	scope, err := d.access.scopeRoot(doc.Scope)
 	if err != nil {
 		return empty, err
 	}
@@ -220,9 +220,9 @@ func validScope(scope string) bool {
 	return (kind == "topic" || kind == "agent" || kind == "skill") && validSlug(name)
 }
 
-func (d *Documents) scopeRoot(scope string) (*os.Root, error) {
+func (a *Access) scopeRoot(scope string) (*os.Root, error) {
 	kind, name, _ := strings.Cut(scope, ":")
-	container, err := openDirectory(d.access.root, kind+"s")
+	container, err := openDirectory(a.root, kind+"s")
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (d *Documents) scopeRoot(scope string) (*os.Root, error) {
 }
 
 func (d *Documents) openDocument(doc document) (*os.File, error) {
-	scope, err := d.scopeRoot(doc.Scope)
+	scope, err := d.access.scopeRoot(doc.Scope)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (d *Documents) Delete(id string) error {
 		return err
 	}
 
-	scope, err := d.scopeRoot(doc.Scope)
+	scope, err := d.access.scopeRoot(doc.Scope)
 	if os.IsNotExist(err) {
 		return documentUnavailable
 	}

@@ -16,7 +16,12 @@ type CSV struct {
 
 // ParseCSV preserves cell strings, including line endings inside quoted fields.
 func ParseCSV(input string) (CSV, error) {
+	return parseCSV(input, nil)
+}
+
+func parseCSV(input string, offsets *[][]int) (CSV, error) {
 	table := CSV{Rows: [][]string{}}
+	length := len(input)
 	if !utf8.ValidString(input) {
 		return table, errors.New("content is not valid UTF-8")
 	}
@@ -25,20 +30,26 @@ func ParseCSV(input string) (CSV, error) {
 			input = rest
 			continue
 		}
-		row, rest, err := csvRecord(input)
+		start := length - len(input)
+		var fields *[]int
+		if offsets != nil {
+			*offsets = append(*offsets, nil)
+			fields = &(*offsets)[len(*offsets)-1]
+		}
+		row, rest, err := csvRecord(input, start, fields)
 		if err != nil {
-			return table, fmt.Errorf("CSV record %d: %w", len(table.Rows)+recordOffset(table), err)
+			return table, &csvError{start, fmt.Errorf("CSV record %d: %w", len(table.Rows)+recordOffset(table), err)}
 		}
 		input = rest
 		if table.Columns == nil {
 			if err := checkColumns(row); err != nil {
-				return table, err
+				return table, &csvError{start, err}
 			}
 			table.Columns = row
 			continue
 		}
 		if len(row) != len(table.Columns) {
-			return table, fmt.Errorf("CSV record %d has %d fields, expected %d", len(table.Rows)+2, len(row), len(table.Columns))
+			return table, &csvError{start, fmt.Errorf("CSV record %d has %d fields, expected %d", len(table.Rows)+2, len(row), len(table.Columns))}
 		}
 		table.Rows = append(table.Rows, row)
 	}
@@ -66,9 +77,21 @@ func checkColumns(columns []string) error {
 	return nil
 }
 
-func csvRecord(input string) ([]string, string, error) {
+type csvError struct {
+	offset int
+	err    error
+}
+
+func (e *csvError) Error() string { return e.err.Error() }
+func (e *csvError) Unwrap() error { return e.err }
+
+func csvRecord(input string, start int, offsets *[]int) ([]string, string, error) {
 	var cells []string
+	end := start + len(input)
 	for {
+		if offsets != nil {
+			*offsets = append(*offsets, end-len(input))
+		}
 		cell, rest, err := csvField(input)
 		if err != nil {
 			return nil, "", err

@@ -10,6 +10,15 @@ import (
 	"unicode/utf8"
 )
 
+// OffsetError retains the byte offset of a native JSON parse failure.
+type OffsetError struct {
+	Offset int
+	Err    error
+}
+
+func (e *OffsetError) Error() string { return e.Err.Error() }
+func (e *OffsetError) Unwrap() error { return e.Err }
+
 // Decode preserves number spellings and rejects ambiguous or lossy JSON.
 func Decode(data []byte, maxDepth int) (any, error) {
 	if !utf8.Valid(data) || !validSurrogates(data) {
@@ -19,10 +28,11 @@ func Decode(data []byte, maxDepth int) (any, error) {
 	decoder.UseNumber()
 	value, err := readValue(decoder, maxDepth)
 	if err != nil {
-		return nil, err
+		return nil, &OffsetError{int(decoder.InputOffset()), err}
 	}
+	offset := int(decoder.InputOffset())
 	if _, err := decoder.Token(); err != io.EOF {
-		return nil, errors.New("expected exactly one JSON value")
+		return nil, &OffsetError{offset, errors.New("expected exactly one JSON value")}
 	}
 	return value, nil
 }

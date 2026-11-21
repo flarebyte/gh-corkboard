@@ -89,3 +89,7 @@ func openLock(root *os.Root, name string) (*os.File, error) {
 func createFile(root *os.Root, name string, data []byte) error {
 	return stageFile(root, data, 0600, func(temp string) error { return root.Link(temp, name) })
 }
+
+func readDirectory(root *os.Root) ([]fs.DirEntry, error) {
+	return fs.ReadDir(root.FS(), ".")
+}

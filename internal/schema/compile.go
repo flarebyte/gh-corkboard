@@ -13,6 +13,9 @@ func (bundledOnly) Load(url string) (any, error) {
 }
 
 func Compile(id string, document any) (*jsonschema.Schema, error) {
+	if err := checkLocal(document); err != nil {
+		return nil, err
+	}
 	compiler := jsonschema.NewCompiler()
 	compiler.DefaultDraft(jsonschema.Draft2020)
 	compiler.UseLoader(bundledOnly{})
