@@ -6,6 +6,8 @@
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
       "status": "active",
       "reviewComments": {}
     },
@@ -18,6 +20,29 @@
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
+      }
+    },
+    "doc update (milestone and concept)": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Requirements for cursor pagination",
+      "milestone": "v1.1",
+      "concept": "pagination cursors",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -48,6 +73,8 @@
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {

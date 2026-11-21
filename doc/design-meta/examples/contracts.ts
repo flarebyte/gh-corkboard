@@ -46,6 +46,8 @@ interface DocumentMetadata {
   format: Format;
   schemaId?: string;
   description: string;
+  milestone?: string;
+  concept?: string;
   status: Status;
   reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
 }

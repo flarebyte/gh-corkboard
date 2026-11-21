@@ -12,7 +12,7 @@ Every board command requires a global `--as <principal>` selector before the com
 
 The policy is plaintext JSON validated against a built-in version-1 schema. Each principal entry has an ID and an optional role. After schema validation, the CLI resolves an omitted `role` to `member`. An explicit role must be valid and non-null. Check unique principal and topic IDs, one grant per scope and principal with a nonempty set of distinct permissions, registered grant subjects and scopes, and at least one administrator after applying defaults. Only a human can hold `admin`.
 
-`read` allows discovery, retrieval, and validation. `write` allows creating documents and changing their content or description. A topic `delete` grant allows deleting individual documents in that topic. `status` allows setting any lifecycle status and setting or clearing the caller's own review. Each of `write`, `delete`, and `status` implies `read` and can be granted independently where the scope permits it. Board admins have all four permissions in every scope and run board-wide prune. Only a board admin can delete a document from an agent or skill channel.
+`read` allows discovery, retrieval, and validation. `write` allows creating documents and changing their content, description, milestone, or concept. A topic `delete` grant allows deleting individual documents in that topic. `status` allows setting any lifecycle status and setting or clearing the caller's own review. Each of `write`, `delete`, and `status` implies `read` and can be granted independently where the scope permits it. Board admins have all four permissions in every scope and run board-wide prune. Only a board admin can delete a document from an agent or skill channel.
 
 Folder removal requires the board `admin` role. `doc delete` retains the folder even when deleting its last document. `access topic delete` removes the topic folder and its grants only when the folder is empty and the scope has no remaining index entries.
 
@@ -64,6 +64,7 @@ In local CLI mode, `--as` declares the caller's identity. It provides routing an
 | Any agent | board.communication | self-note | The agent can recover local context in a later session | Write under its own agent scope |
 | Skill principal | board.access | skill-reference | The agents can find guidance by scope or description | Ask a board admin to grant read access to selected agents |
 | Specification and test agents | board.index | review | Readers can see the comments and open linked documents where they have read access | Record separate review outcomes and link to supporting documents by UUID |
+| Any agent | board.index | find-work | The agent can find a small set of related documents for the current milestone | Filter readable documents by milestone and concept |
 | Document author | board.validation | draft | The draft is formatted on write and the validator reports the missing fields | Save a well-formed draft missing required schema fields and run validation |
 | Document author | board.patching | patch | The patch updates one document or reports a stale base without changing it | Send a small patch against the exact bytes returned by doc get |
 | Board administrator | board.retention | retire | The selected files are removed and the prior board can be inspected offline | Preview archived documents then save a ZIP snapshot before applying cleanup |
@@ -128,14 +129,14 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 | Registered principal | `schema list [--format <format>]` | board.validation | List registered schemas ordered by format and ID |
 | Admin | `schema update <format> <schema-id>` | board.validation | Replace an existing schema with a valid definition from stdin |
 | Admin | `schema delete <format> <schema-id>` | board.validation | Delete an unused schema |
-| Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Format stdin content before saving and return the new document UUID |
+| Scope write plus status when supplied | `doc create --in <scope> --name <name> --format <format> [--schema <schema-id>] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--preserve-row-order]` | board.formatting | Format stdin content before saving and return the new document UUID |
 | Scope read | `doc get <doc-id>` | board.documents | Write stored document bytes to stdout |
 | Scope read | `doc locate --in <scope> --name <name> --format <format> [--schema <schema-id>]` | board.documents | Return the UUID for one exact logical document name |
 | Scope write | `doc patch <doc-id> --expect <sha256> [--preserve-row-order]` | board.patching | Apply a patch from stdin to the exact base revision and format the result |
-| Scope write for content or description and scope status for lifecycle or own review | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Format replacement content before saving and report whether formatting changed the supplied bytes |
+| Scope write for content, description, milestone or concept. Scope status for lifecycle or own review. | `doc update <doc-id> [--stdin [--preserve-row-order]] [--description <text>] [--milestone <text>] [--concept <text>] [--status <status>] [--review-comment <text> --review-status <pass\|warning\|fail> [--review-locator <doc-id>]\|--clear-review-comment]` | board.formatting | Apply requested content or metadata updates and report any formatting changes to replacement bytes |
 | Topic delete or board admin | `doc delete <doc-id>` | board.documents | Delete one document and remove its index entry while retaining the folder |
 | Scope read | `doc validate <doc-id\|--all>` | board.validation | Validate the selected document or all readable indexed documents |
-| Registered principal | `index search [--in <scope>] [--status <status>] [--query <text>]` | board.index | Search metadata of readable documents and return logical identifiers |
+| Registered principal | `index search [--in <scope>] [--status <status>] [--milestone <text>] [--concept <text>] [--query <text>]` | board.index | Search metadata of readable documents and return logical identifiers |
 | Admin | `index audit` | board.index | Report filesystem and index discrepancies without changing board data |
 | Admin | `index resync` | board.index | Reconcile the catalog with valid managed locations and preserve surviving metadata |
 | Admin | `index prune [--apply --expect <plan-id>]` | board.retention | Preview or apply removal of archived documents |
@@ -145,7 +146,7 @@ Every indexed document has a UUIDv4 locator, including documents adopted by resy
 
 Commands in the table follow `gh corkboard --as <principal>`. They address board resources by scope, slug, format, schema ID, document UUID, or prune plan ID. Use stdin for document and schema bytes, and shell redirection for local input or snapshot output. The CLI accepts no filesystem path parameters. Create refuses to replace an existing resource. Update and delete require an existing target. `doc update` requires at least one change flag. Check permission for every requested field before changing document bytes or metadata. `doc validate --all` checks readable indexed documents only.
 
-Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, optional schema ID, description, status, and review comments keyed by author. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document or patch content. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
+Use `--json` on commands that return metadata, mutation summaries, reports or diagnostics. Document metadata results expose UUID, scope, name, format, description, status, and review comments keyed by author. They also expose schema ID, milestone, and concept when present. They omit the internal path and digest. Admin maintenance diagnostics may include paths for manual recovery. The two `get` commands and `snapshot create` emit stored bytes or ZIP bytes as appropriate. Send usage, authorization and operational errors to stderr. Exit 0 for success, including a clean audit and successful validation of schemaless documents. Exit 1 for validation failures, audit findings, or malformed document or patch content. Exit 2 for usage, authorization or operational failure. Search and validation list results use a stable lexical scope and filename order.
 
 `doc get` and `schema get` write only the stored bytes to stdout, with no envelope, status message, or extra newline. Pipe JSON directly to `jq`, and Markdown or CSV to tools suited to those formats. Errors go to stderr. In Bash, use `set -o pipefail` when the pipeline should fail if the get command fails.
 
@@ -162,19 +163,22 @@ gh corkboard --as human:owner access grant topic:specs --to agent:specs --permis
 gh corkboard --as human:owner access grant topic:specs --to agent:implementation --permission read
 gh corkboard --as human:owner access grant topic:specs --to agent:test --permission status
 gh corkboard --as human:owner access grant agent:test --to agent:implementation --permission read
-gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md --description "Requirements for cursor pagination" --status active --json < pagination.md
+gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
+  --description "Requirements for cursor pagination" --milestone "v1 launch" --concept "cursor pagination" \
+  --status active --json < pagination.md
 doc_id=$(gh corkboard --as agent:implementation doc locate --in topic:specs --name pagination --format md)
 gh corkboard --as agent:implementation doc get "$doc_id"
 gh corkboard --as agent:specs doc update "$doc_id" --status review --review-status pass --review-comment "Acceptance criteria cover the edge cases."
 gh corkboard --as agent:test doc create --in agent:test --name pagination-review --format md --description "Test review of the cursor pagination spec" < pagination-review.md
 review_id=$(gh corkboard --as agent:test doc locate --in agent:test --name pagination-review --format md)
 gh corkboard --as agent:test doc update "$doc_id" --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator "$review_id"
-gh corkboard --as agent:implementation index search --in topic:specs --status approved --json
+gh corkboard --as agent:implementation index search --in topic:specs --status approved \
+  --milestone "v1 launch" --concept "cursor pagination" --json
 gh corkboard --as agent:implementation doc get "$review_id"
 gh corkboard --as agent:implementation doc create --in agent:implementation --name follow-up --format md < follow-up.md
 ```
 
-Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Verify formatting on both content write commands, CSV order preservation when requested, and unchanged file and index state when syntax is invalid. Also exercise read filtering, malformed policy and index data, symlink rejection, well-formed drafts that fail schema validation, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+Exercise scoped create and denied cross-scope mutations. Verify that an admin can grant topic access and issue private read and status grants. Verify that a member cannot change grants, including in its own scope. Verify that a writer cannot explicitly set a status without a status grant, a reviewer with only status can set any status and update only its own review, and a combined update fails before any changes if the caller lacks a required permission. Check that locate returns the same ID as create and search, that linked reviews can span scopes, and that inaccessible targets are rejected when linking. Verify that agent and skill owners can edit their own documents and are denied deletion, even if they hold delete access in a topic. Verify that topic delete leaves the folder intact and that a board admin can remove an empty topic with no index entries. Verify formatting on both content write commands, CSV order preservation when requested, and unchanged file and index state when syntax is invalid. Verify that milestone and concept filters combine with other filters after read authorization and that clearing either value leaves the other intact. Also exercise malformed policy and index data, symlink rejection, well-formed drafts that fail schema validation, schema changes, concurrent updates, archived documents edited after preview, and snapshot failures. Build the packaged binary using GitHub CLI naming conventions. [GitHub CLI extension guide](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
 
 ## Specification sources
 
@@ -241,7 +245,11 @@ In Go, evaluate `go-gitdiff` for parsing unified text and applying it in strict 
 
 `index/documents.json` is one catalog for the whole board. Its top-level object has `version: 1` and a `documents` array ordered by canonical path. Each entry stores logical document metadata, its derived board-relative `path`, and the lowercase hexadecimal SHA-256 digest of the indexed bytes. A built-in schema validates structure, the UUID form, status, review comments, and digest. Go checks uniqueness of IDs and paths, that the scope and comment authors are registered, and that the stored path exactly matches the derived path. A malformed index blocks document selections and writes that would depend on it.
 
-`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. The query is a case-insensitive substring of the name or description. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk. New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. When CLI or external content changes, a prior `archived` status reverts to `draft` unless the CLI update explicitly sets a status for the new bytes.
+`milestone` and `concept` are optional free-text strings on each index entry. Set them with `--milestone` and `--concept` on `doc create` or `doc update` with write access. Trim leading and trailing whitespace and preserve the remaining text and case. Omitted flags leave existing values intact on update. An explicitly empty or whitespace-only value clears the field. The index and metadata output omit unset values.
+
+`index search` applies ACL filtering first and combines supplied filters with AND. `--in` matches one logical scope. `--milestone` and `--concept` match the entire value case-insensitively after trimming the filter. A supplied filter requires a nonblank value and matches only entries with that field set. `--query` matches a case-insensitive substring in the name, description, milestone, or concept. Search returns indexed metadata, including comments. `doc get` reads the authorized file on disk.
+
+New entries default to an empty description, `draft` status, and an empty `reviewComments` object. A principal with `status` may set any lifecycle value. An `obsolete` document remains readable by authorized principals and is discouraged for new references. Mark it `archived` when it is ready for admin cleanup. When CLI or external content changes, a prior `archived` status reverts to `draft` unless the CLI update explicitly sets a status for the new bytes.
 
 `reviewComments` sits alongside the document's lifecycle `status` in each index entry. It maps canonical principal IDs such as `agent:specs` or `agent:test` to one current review per author. Each review contains a nonempty `comment`, a review `status`, and an optional document UUID in `locator`. Review statuses are `pass` for criteria met, `warning` for concerns to call out, and `fail` for unmet criteria. These outcomes are independent of the document lifecycle status.
 
@@ -249,7 +257,7 @@ In Go, evaluate `go-gitdiff` for parsing unified text and applying it in strict 
 
 A review can link to any existing indexed document on the board that the reviewer can read. When returning review metadata, the CLI includes the locator only if the target is available to the reader. If the target is later deleted or the reader loses access, the index retains the stored locator and the CLI still returns the review text and outcome.
 
-Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported entries. `index resync` adopts files only in registered managed scopes and assigns new UUIDs, draft status, and empty review comments. It preserves UUIDs, descriptions, and comments at surviving paths and preserves status except when bytes change for an archived document. It drops records for missing files and reports those removals and status resets. External renames appear as a missing path and a new file. Resync can rebuild a missing catalog with new IDs. It refuses to overwrite a malformed or unsupported index so its metadata remains recoverable. Use `doc validate --all` to check content in readable indexed documents.
+Administrators use `index audit` to report missing files, unindexed documents, digest changes, malformed or missing index, and unsupported entries. `index resync` adopts files only in registered managed scopes and assigns new UUIDs, draft status, and empty review comments. Newly adopted files have no milestone or concept. Resync preserves UUIDs, descriptions, milestones, concepts, and comments at surviving paths and preserves status except when bytes change for an archived document. It drops records for missing files and reports those removals and status resets. External renames appear as a missing path and a new file. Resync can rebuild a missing catalog with new IDs. It refuses to overwrite a malformed or unsupported index so its metadata remains recoverable. Use `doc validate --all` to check content in readable indexed documents.
 
 All CLI operations affecting the board use an OS-backed lock released on process exit. Mutations take an exclusive lock. Reads hold a compatible lock from authorization through IO so an ACL change cannot interleave with a CLI read. Keep lock bookkeeping under `index/` and write replacements atomically at the individual-file level. Write document bytes before the corresponding index entry, and report partial success if the index write fails. Audit and resync recover file/catalog consistency after interrupted updates. Direct editors can create drift and must finish writes before a snapshot or destructive command.
 
@@ -277,6 +285,8 @@ All CLI operations affecting the board use an OS-backed lock released on process
       "format": "md",
       "path": "topics/specs/pagination.md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -387,6 +397,8 @@ interface DocumentMetadata {
   format: Format;
   schemaId?: string;
   description: string;
+  milestone?: string;
+  concept?: string;
   status: Status;
   reviewComments: Partial<Record<PrincipalId, ReviewComment>>;
 }

@@ -326,7 +326,9 @@ example_stale_patch_base() {
 
 # doc create
 example_doc_create() {
-  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md --description "Requirements for cursor pagination" --status active < pagination.md
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
+    --description "Requirements for cursor pagination" --milestone "v1 launch" \
+    --concept "cursor pagination" --status active < pagination.md
   # Expected stdout
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
@@ -364,6 +366,16 @@ example_doc_update() {
   gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb. Status: approved. Review by agent:test: pass.
+}
+
+# doc update with milestone and concept
+example_doc_update_labels() {
+  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb \
+    --milestone "v1.1" --concept "pagination cursors"
+  # Expected stdout
+  # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb.
+  # Milestone: v1.1
+  # Concept: pagination cursors
 }
 
 # doc update with replacement content
@@ -451,6 +463,8 @@ example_doc_validate() {
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
       "status": "active",
       "reviewComments": {}
     },
@@ -463,6 +477,29 @@ example_doc_validate() {
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
+      "status": "approved",
+      "reviewComments": {
+        "agent:specs": {
+          "comment": "Acceptance criteria cover the edge cases.",
+          "status": "pass"
+        },
+        "agent:test": {
+          "comment": "The test plan covers every criterion.",
+          "status": "pass",
+          "locator": "b69ac8e7-6755-4249-83ef-211daa24ab6f"
+        }
+      }
+    },
+    "doc update (milestone and concept)": {
+      "id": "29b4dd81-af57-4c98-b3f0-ff0bf66da7bb",
+      "scope": "topic:specs",
+      "name": "pagination",
+      "format": "md",
+      "description": "Requirements for cursor pagination",
+      "milestone": "v1.1",
+      "concept": "pagination cursors",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -493,6 +530,8 @@ example_doc_validate() {
       "name": "pagination",
       "format": "md",
       "description": "Requirements for cursor pagination",
+      "milestone": "v1 launch",
+      "concept": "cursor pagination",
       "status": "approved",
       "reviewComments": {
         "agent:specs": {
@@ -564,10 +603,13 @@ example_doc_validate() {
 
 # index search
 example_index_search() {
-  gh corkboard --as agent:implementation index search --in topic:specs --status approved
+  gh corkboard --as agent:implementation index search --in topic:specs --status approved \
+    --milestone "v1 launch" --concept "cursor pagination"
   # Expected stdout
   # 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb  approved  topic:specs / pagination (md)
   #   Requirements for cursor pagination
+  #   Milestone: v1 launch
+  #   Concept: cursor pagination
   #   agent:specs [pass] Acceptance criteria cover the edge cases.
   #   agent:test [pass] The test plan covers every criterion.
   #     Review document: b69ac8e7-6755-4249-83ef-211daa24ab6f
@@ -648,6 +690,8 @@ example_snapshot_create() {
           "name": "pagination",
           "format": "md",
           "description": "Requirements for cursor pagination",
+          "milestone": "v1 launch",
+          "concept": "cursor pagination",
           "status": "approved",
           "reviewComments": {
             "agent:specs": {

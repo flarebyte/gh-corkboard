@@ -8,6 +8,8 @@
           "name": "pagination",
           "format": "md",
           "description": "Requirements for cursor pagination",
+          "milestone": "v1 launch",
+          "concept": "cursor pagination",
           "status": "approved",
           "reviewComments": {
             "agent:specs": {

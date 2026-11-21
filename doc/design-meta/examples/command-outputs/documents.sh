@@ -4,7 +4,9 @@
 
 # doc create
 example_doc_create() {
-  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md --description "Requirements for cursor pagination" --status active < pagination.md
+  gh corkboard --as agent:specs doc create --in topic:specs --name pagination --format md \
+    --description "Requirements for cursor pagination" --milestone "v1 launch" \
+    --concept "cursor pagination" --status active < pagination.md
   # Expected stdout
   # Created 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb (topic:specs / pagination, md, active).
 }
@@ -42,6 +44,16 @@ example_doc_update() {
   gh corkboard --as agent:test doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb --status approved --review-status pass --review-comment "The test plan covers every criterion." --review-locator b69ac8e7-6755-4249-83ef-211daa24ab6f
   # Expected stdout
   # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb. Status: approved. Review by agent:test: pass.
+}
+
+# doc update with milestone and concept
+example_doc_update_labels() {
+  gh corkboard --as agent:specs doc update 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb \
+    --milestone "v1.1" --concept "pagination cursors"
+  # Expected stdout
+  # Updated 29b4dd81-af57-4c98-b3f0-ff0bf66da7bb.
+  # Milestone: v1.1
+  # Concept: pagination cursors
 }
 
 # doc update with replacement content
