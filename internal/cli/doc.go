@@ -10,9 +10,9 @@ import (
 )
 
 func docCommand(actor *string, jsonOutput *bool) *cobra.Command {
-	group := &cobra.Command{Use: "doc", Short: "Create, read, find, and delete documents"}
+	group := &cobra.Command{Use: "doc", Short: "Create, read, find, update, and delete documents"}
 	group.AddCommand(createCommand(actor, jsonOutput), getCommand(actor), locateCommand(actor, jsonOutput),
-		docSearchCommand(actor, jsonOutput), deleteCommand(actor, jsonOutput))
+		docSearchCommand(actor, jsonOutput), docUpdateCommand(actor, jsonOutput), deleteCommand(actor, jsonOutput))
 	return group
 }
 

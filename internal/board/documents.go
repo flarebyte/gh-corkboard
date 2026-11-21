@@ -83,14 +83,20 @@ func (o CreateOptions) validate() error {
 		return errors.New("--schema must be a valid slug")
 	case o.PreserveRowOrder && o.Format != "csv":
 		return errors.New("--preserve-row-order requires CSV content")
-	case !utf8.ValidString(o.Description) || !displayText(o.Description, false) || utf8.RuneCountInString(o.Description) > 500:
-		return errors.New("--description must be single-line display text of at most 500 characters")
-	case o.Milestone != "" && !validLabel(o.Milestone, false):
-		return errors.New("--milestone must be a valid slash-separated label of at most 64 characters")
-	case o.Concept != "" && !validLabel(o.Concept, true):
-		return errors.New("--concept must be 1–48 characters in slash-separated segments of ASCII letters")
 	case o.Status != nil && !slices.Contains(statuses, *o.Status):
 		return errors.New("--status must be a lifecycle status")
+	}
+	return validateDocumentLabels(o.Description, o.Milestone, o.Concept)
+}
+
+func validateDocumentLabels(description, milestone, concept string) error {
+	switch {
+	case !utf8.ValidString(description) || !displayText(description, false) || utf8.RuneCountInString(description) > 500:
+		return errors.New("--description must be single-line display text of at most 500 characters")
+	case milestone != "" && !validLabel(milestone, false):
+		return errors.New("--milestone must be a valid slash-separated label of at most 64 characters")
+	case concept != "" && !validLabel(concept, true):
+		return errors.New("--concept must be 1–48 characters in slash-separated segments of ASCII letters")
 	}
 	return nil
 }
@@ -111,13 +117,11 @@ func (d *Documents) Create(o CreateOptions, input io.Reader) (DocumentMetadata, 
 		}
 		status = *o.Status
 	}
-	if o.Assignee != "" && !slices.Contains(d.access.policy.permissions(o.Assignee, o.Scope), "read") {
-		return empty, errors.New("--assignee must be a registered principal with scope read access")
+	if err := d.access.policy.validateAssignee(o.Assignee, o.Scope); err != nil {
+		return empty, err
 	}
-	for _, entry := range d.catalog.Documents {
-		if entry.Scope == o.Scope && entry.Name == o.Name && strings.EqualFold(entry.Milestone, o.Milestone) {
-			return empty, fmt.Errorf("%s already exists in %s for this milestone", o.Name, o.Scope)
-		}
+	if d.nameTaken(o.Scope, o.Name, o.Milestone, "") {
+		return empty, fmt.Errorf("%s already exists in %s for this milestone", o.Name, o.Scope)
 	}
 
 	doc := document{
@@ -158,6 +162,19 @@ func (d *Documents) Create(o CreateOptions, input io.Reader) (DocumentMetadata, 
 		return empty, fmt.Errorf("document %s was written but its index entry was not saved: %w", doc.ID, err)
 	}
 	return doc.metadata(), nil
+}
+
+func (p accessPolicy) validateAssignee(id, scope string) error {
+	if id != "" && !slices.Contains(p.permissions(id, scope), "read") {
+		return errors.New("--assignee must be a registered principal with scope read access")
+	}
+	return nil
+}
+
+func (d *Documents) nameTaken(scope, name, milestone, exceptID string) bool {
+	return slices.ContainsFunc(d.catalog.Documents, func(entry document) bool {
+		return entry.ID != exceptID && entry.Scope == scope && entry.Name == name && strings.EqualFold(entry.Milestone, milestone)
+	})
 }
 
 func newDocumentID() string {

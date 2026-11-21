@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/flarebyte/gh-corkboard/internal/board"
 	"github.com/flarebyte/gh-corkboard/internal/docformat"
 	"github.com/spf13/cobra"
 )
@@ -63,7 +64,12 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			}
 		}
 		if jsonOutput {
-			_ = json.NewEncoder(stderr).Encode(map[string]string{"code": "command_error", "message": err.Error()})
+			code, message := "command_error", err.Error()
+			if errors.Is(err, board.ErrRevisionMismatch) {
+				code = "revision_mismatch"
+				message = "Document changed since it was read. Get the current content and revision before retrying."
+			}
+			_ = json.NewEncoder(stderr).Encode(map[string]string{"code": code, "message": message})
 		} else {
 			if helpTarget != nil {
 				cmd = helpTarget

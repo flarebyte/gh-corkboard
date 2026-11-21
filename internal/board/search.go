@@ -98,32 +98,46 @@ func (d *Documents) Search(o SearchOptions) ([]DocumentMetadata, error) {
 	results := make([]DocumentMetadata, 0, len(matched))
 	availability := map[string]bool{}
 	for _, doc := range matched {
-		item := doc.metadata()
-		item.Reviews = make(map[string]Review, len(doc.Reviews))
-		for author, review := range doc.Reviews {
-			if review.Locator != "" && !locatorAvailable(d, targets[review.Locator], readable, availability) {
-				review.Locator = ""
+		results = append(results, doc.visibleMetadata(func(id string) bool {
+			target := targets[id]
+			if !readable[target.Scope] {
+				return false
 			}
-			item.Reviews[author] = review
-		}
-		results = append(results, item)
+			if exists, cached := availability[id]; cached {
+				return exists
+			}
+			exists := d.locatorExists(target)
+			availability[id] = exists
+			return exists
+		}))
 	}
 	return results, nil
 }
 
-func locatorAvailable(d *Documents, target document, readable, cache map[string]bool) bool {
-	if !readable[target.Scope] {
+func (doc document) visibleMetadata(visible func(string) bool) DocumentMetadata {
+	item := doc.metadata()
+	item.Reviews = make(map[string]Review, len(doc.Reviews))
+	for author, entry := range doc.Reviews {
+		if entry.Locator != "" && !visible(entry.Locator) {
+			entry.Locator = ""
+		}
+		item.Reviews[author] = entry
+	}
+	return item
+}
+
+func (d *Documents) canReadLocator(id string) bool {
+	target, _, err := d.selectDocument(id, "read")
+	return err == nil && d.locatorExists(target)
+}
+
+func (d *Documents) locatorExists(target document) bool {
+	file, err := d.openDocument(target)
+	if err != nil {
 		return false
 	}
-	if exists, cached := cache[target.ID]; cached {
-		return exists
-	}
-	file, err := d.openDocument(target)
-	if err == nil {
-		file.Close()
-	}
-	cache[target.ID] = err == nil
-	return err == nil
+	file.Close()
+	return true
 }
 
 func compareDocuments(a, b document) int {
