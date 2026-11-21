@@ -131,14 +131,13 @@ func TestInitRetryAroundPublication(t *testing.T) {
 }
 
 func TestLinkedWorktreeIsolation(t *testing.T) {
-	source, _, err := workspace("")
-	if err != nil {
-		t.Skip("requires a Git source checkout with a HEAD")
-	}
 	root := testrepo.New(t)
-	testrepo.Git(t, root, "fetch", "-q", source, "HEAD")
+	// Seed the fixture locally so the test works with shallow source checkouts.
+	testrepo.Git(t, root, "-c", "user.name=Test Fixture", "-c", "user.email=test@example.invalid",
+		"-c", "commit.gpgsign=false", "-c", "core.hooksPath="+t.TempDir(),
+		"commit", "--quiet", "--allow-empty", "-m", "Seed linked worktree fixture")
 	linked := filepath.Join(t.TempDir(), "linked")
-	testrepo.Git(t, root, "worktree", "add", "--quiet", "--detach", linked, "FETCH_HEAD")
+	testrepo.Git(t, root, "worktree", "add", "--quiet", "--detach", linked, "HEAD")
 	if _, err := Init(linked, "human:linked"); err != nil {
 		t.Fatal(err)
 	}
