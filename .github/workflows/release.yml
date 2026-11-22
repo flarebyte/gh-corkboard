@@ -36,6 +36,7 @@ jobs:
       - name: Build release artifacts
         run: |
           GOBIN="$RUNNER_TEMP" go install github.com/flarebyte/gh-flarebyte/cmd/gh-flarebyte@v0.30.0
+          "$RUNNER_TEMP/gh-flarebyte" config validate
           "$RUNNER_TEMP/gh-flarebyte" build
       - name: Read the embedded release version
         id: version

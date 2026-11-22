@@ -39,3 +39,4 @@ go.work.sum
 temp/
 
 build/
+/.gocache/
