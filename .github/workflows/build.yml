@@ -28,4 +28,5 @@ jobs:
       - name: Build
         run: |
           GOBIN="$RUNNER_TEMP" go install github.com/flarebyte/gh-flarebyte/cmd/gh-flarebyte@v0.30.0
+          "$RUNNER_TEMP/gh-flarebyte" config validate
           "$RUNNER_TEMP/gh-flarebyte" build --target linux-amd64

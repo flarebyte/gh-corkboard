@@ -28,6 +28,13 @@ repository: {
 		{name: "wontfix", color: "ffffff", description: "This will not be worked on"},
 	]
 
+	features: {
+		mergeCommit:         false
+		rebaseMerge:         false
+		squashMerge:         true
+		deleteBranchOnMerge: true
+	}
+
 	// Verify a GitHub Actions job named "CI passed" on a pull request before syncing.
 	branchProtection: {
 		enabled:            true
@@ -46,6 +53,22 @@ build: {
 		"linux-amd64",
 		"windows-amd64",
 	]
+}
+
+go: {
+	cacheDir:  "./.gocache"
+	toolchain: "auto"
+}
+
+devOutput: {
+	color:      "auto"
+	style:      "summary"
+	showPassed: true
+}
+
+coverage: {
+	min:        65
+	enforceMin: true
 }
 
 release: {
