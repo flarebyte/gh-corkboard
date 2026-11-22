@@ -1,0 +1,15 @@
+locator: internal/docformat/format.go
+meta:
+  function_list:
+    - Format
+    - Valid
+    - encodeJSON
+    - markdown
+    - parseJSON
+  import_files_list:
+    - bytes
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/strictjson
+    - unicode/utf8
+  language: go

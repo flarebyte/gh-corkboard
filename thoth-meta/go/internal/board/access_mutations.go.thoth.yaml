@@ -1,0 +1,12 @@
+locator: internal/board/access_mutations.go
+meta:
+  function_list:
+    - checkOrphanScope
+    - checkRole
+  import_files_list:
+    - errors
+    - fmt
+    - io
+    - os
+    - slices
+  language: go

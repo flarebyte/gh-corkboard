@@ -1,0 +1,13 @@
+locator: internal/cli/doc_update.go
+meta:
+  function_list:
+    - docUpdateCommand
+    - writeUpdateSummary
+  import_files_list:
+    - encoding/json
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+    - strings
+  language: go

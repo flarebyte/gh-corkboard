@@ -1,0 +1,8 @@
+locator: internal/cli/snapshot.go
+meta:
+  function_list:
+    - snapshotCommand
+  import_files_list:
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+  language: go

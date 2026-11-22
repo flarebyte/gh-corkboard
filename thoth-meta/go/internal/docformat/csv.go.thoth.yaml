@@ -1,0 +1,20 @@
+locator: internal/docformat/csv.go
+meta:
+  function_list:
+    - ParseCSV
+    - checkColumns
+    - csvField
+    - csvRecord
+    - cutRecordEnd
+    - formatCSV
+    - parseCSV
+    - recordOffset
+    - writeCSVRecord
+  import_files_list:
+    - cmp
+    - errors
+    - fmt
+    - slices
+    - strings
+    - unicode/utf8
+  language: go

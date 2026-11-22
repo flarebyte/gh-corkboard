@@ -1,0 +1,10 @@
+locator: internal/board/paths.go
+meta:
+  function_list:
+    - documentFromFilename
+    - scopePath
+  import_files_list:
+    - github.com/flarebyte/gh-corkboard/internal/docformat
+    - path
+    - strings
+  language: go

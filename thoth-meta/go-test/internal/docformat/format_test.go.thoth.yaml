@@ -1,0 +1,9 @@
+locator: internal/docformat/format_test.go
+meta:
+  function_list:
+    - TestFormat
+    - TestMalformedContent
+  import_files_list:
+    - errors
+    - testing
+  language: go

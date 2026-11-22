@@ -1,0 +1,14 @@
+locator: internal/cli/index_test.go
+meta:
+  function_list:
+    - TestIndexAuditAndResyncDrift
+    - TestIndexRebuildMissingAndKeepMalformed
+  import_files_list:
+    - bytes
+    - encoding/json
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - os
+    - path/filepath
+    - strings
+    - testing
+  language: go

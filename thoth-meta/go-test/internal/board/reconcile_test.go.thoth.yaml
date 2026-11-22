@@ -1,0 +1,22 @@
+locator: internal/board/reconcile_test.go
+meta:
+  function_list:
+    - TestMissingIndexCannotInferMilestoneNamespaces
+    - TestRenameDoesNotReplaceExistingTarget
+    - TestResyncConflictsAreDetectedBeforeWrites
+    - TestResyncRejectsMovedIndexedUUID
+    - TestResyncRejectsSymlinkedDocument
+    - TestResyncReusesRenamedUUIDAfterPublicationFailure
+    - putFile
+    - reconcileFixture
+    - rejectResync
+    - runResync
+  import_files_list:
+    - bytes
+    - errors
+    - os
+    - path
+    - path/filepath
+    - strings
+    - testing
+  language: go

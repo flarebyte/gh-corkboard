@@ -1,0 +1,12 @@
+locator: internal/cli/doc_patch.go
+meta:
+  function_list:
+    - docPatchCommand
+  import_files_list:
+    - encoding/json
+    - errors
+    - fmt
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/spf13/cobra
+    - io
+  language: go

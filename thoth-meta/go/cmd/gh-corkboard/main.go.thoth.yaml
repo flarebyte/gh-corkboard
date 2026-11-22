@@ -1,0 +1,8 @@
+locator: cmd/gh-corkboard/main.go
+meta:
+  function_list:
+    - main
+  import_files_list:
+    - github.com/flarebyte/gh-corkboard/internal/cli
+    - os
+  language: go

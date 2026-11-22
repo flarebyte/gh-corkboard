@@ -1,0 +1,8 @@
+locator: internal/schema/compile.go
+meta:
+  function_list:
+    - Compile
+  import_files_list:
+    - fmt
+    - github.com/santhosh-tekuri/jsonschema/v6
+  language: go

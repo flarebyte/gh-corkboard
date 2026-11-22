@@ -1,0 +1,15 @@
+locator: internal/board/lock_windows.go
+meta:
+  function_list:
+    - lockExclusive
+    - lockFile
+    - lockShared
+    - publishBoard
+    - removeDocumentFile
+    - removeEmptyDirectory
+  import_files_list:
+    - fmt
+    - golang.org/x/sys/windows
+    - os
+    - path/filepath
+  language: go

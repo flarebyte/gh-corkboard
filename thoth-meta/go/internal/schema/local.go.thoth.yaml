@@ -1,0 +1,11 @@
+locator: internal/schema/local.go
+meta:
+  function_list:
+    - checkLocal
+    - pointerTarget
+  import_files_list:
+    - fmt
+    - net/url
+    - strconv
+    - strings
+  language: go

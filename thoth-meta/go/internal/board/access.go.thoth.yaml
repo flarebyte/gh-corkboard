@@ -1,0 +1,16 @@
+locator: internal/board/access.go
+meta:
+  function_list:
+    - WithAccess
+    - orderedPermissions
+    - privateScope
+    - withBoard
+  import_files_list:
+    - cmp
+    - encoding/json
+    - errors
+    - fmt
+    - os
+    - slices
+    - strings
+  language: go

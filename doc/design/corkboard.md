@@ -1,6 +1,6 @@
 # gh-corkboard v1 specification
 
-Proposed specification for a local project corkboard and messaging system.
+Specification for the local project corkboard, including its CLI, storage, and workflows.
 
 ## Access control
 

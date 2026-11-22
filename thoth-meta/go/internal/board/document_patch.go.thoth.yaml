@@ -1,0 +1,7 @@
+locator: internal/board/document_patch.go
+meta:
+  function_list: []
+  import_files_list:
+    - errors
+    - github.com/flarebyte/gh-corkboard/internal/docformat
+  language: go

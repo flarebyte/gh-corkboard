@@ -1,0 +1,17 @@
+locator: internal/cli/doc_update_test.go
+meta:
+  function_list:
+    - TestReviewHandoffAndSupervision
+    - TestUpdateFormattingAndArchiveStatus
+    - TestUpdateGuardsAndPermissions
+    - updateFixture
+  import_files_list:
+    - bytes
+    - encoding/json
+    - github.com/flarebyte/gh-corkboard/internal/board
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - os
+    - path/filepath
+    - strings
+    - testing
+  language: go

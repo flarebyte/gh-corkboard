@@ -1,0 +1,11 @@
+locator: internal/board/inventory.go
+meta:
+  function_list:
+    - fileDigest
+  import_files_list:
+    - crypto/sha256
+    - fmt
+    - io
+    - os
+    - path
+  language: go

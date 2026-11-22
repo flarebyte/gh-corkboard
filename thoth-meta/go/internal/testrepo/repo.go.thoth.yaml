@@ -1,0 +1,9 @@
+locator: internal/testrepo/repo.go
+meta:
+  function_list:
+    - Git
+    - New
+  import_files_list:
+    - os/exec
+    - testing
+  language: go

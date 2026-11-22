@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "scope": {
+            "type": "string",
+            "pattern": "^(agent|skill|topic):[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "format": {
+            "enum": [
+              "json",
+              "csv",
+              "md"
+            ]
+          },
+          "schemaId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 244
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "milestone": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._-]*(/[A-Za-z0-9][A-Za-z0-9 ._-]*)*$",
+            "maxLength": 64
+          },
+          "concept": {
+            "type": "string",
+            "pattern": "^[A-Za-z]+(/[A-Za-z]+)*$",
+            "maxLength": 48
+          },
+          "assignee": {
+            "type": "string",
+            "pattern": "^(human|agent|skill):[a-z0-9][a-z0-9_-]{0,63}$"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "active",
+              "blocked",
+              "review",
+              "approved",
+              "rejected",
+              "resolved",
+              "obsolete",
+              "archived"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "reviewComments": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^(human|agent|skill):[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "comment": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "status": {
+                  "enum": [
+                    "pass",
+                    "warning",
+                    "fail"
+                  ]
+                },
+                "locator": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                }
+              },
+              "required": [
+                "comment",
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "scope",
+          "name",
+          "format",
+          "path",
+          "description",
+          "status",
+          "sha256",
+          "reviewComments"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "documents"
+  ],
+  "additionalProperties": false
+}

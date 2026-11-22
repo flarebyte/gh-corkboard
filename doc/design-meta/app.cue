@@ -9,7 +9,7 @@ modules: ["core"]
 reports: [{
 	title:       "gh-corkboard v1 specification"
 	filepath:    "../design/corkboard.md"
-	description: "Proposed specification for a local project corkboard and messaging system."
+	description: "Specification for the local project corkboard, including its CLI, storage, and workflows."
 	sections: [{
 		title: "Access control"
 		sections: [{

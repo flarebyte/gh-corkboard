@@ -1,0 +1,8 @@
+locator: internal/strictjson/decode_test.go
+meta:
+  function_list:
+    - TestDecode
+  import_files_list:
+    - encoding/json
+    - testing
+  language: go

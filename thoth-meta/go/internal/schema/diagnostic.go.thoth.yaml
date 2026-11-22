@@ -1,0 +1,16 @@
+locator: internal/schema/diagnostic.go
+meta:
+  function_list:
+    - Findings
+    - jsonPointer
+  import_files_list:
+    - cmp
+    - errors
+    - fmt
+    - github.com/santhosh-tekuri/jsonschema/v6
+    - github.com/santhosh-tekuri/jsonschema/v6/kind
+    - golang.org/x/text/language
+    - golang.org/x/text/message
+    - slices
+    - strings
+  language: go

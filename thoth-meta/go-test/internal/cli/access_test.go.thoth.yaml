@@ -1,0 +1,10 @@
+locator: internal/cli/access_test.go
+meta:
+  function_list:
+    - TestAccessCLI
+  import_files_list:
+    - bytes
+    - github.com/flarebyte/gh-corkboard/internal/testrepo
+    - strings
+    - testing
+  language: go

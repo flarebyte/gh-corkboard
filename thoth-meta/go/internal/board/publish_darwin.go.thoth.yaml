@@ -1,0 +1,7 @@
+locator: internal/board/publish_darwin.go
+meta:
+  function_list:
+    - renameExclusive
+  import_files_list:
+    - golang.org/x/sys/unix
+  language: go

@@ -1,0 +1,17 @@
+locator: internal/docformat/text_patch.go
+meta:
+  function_list:
+    - applyHunks
+    - patchText
+    - physicalLines
+    - rangeStart
+    - textBytes
+    - validHunkBody
+  import_files_list:
+    - bytes
+    - errors
+    - fmt
+    - github.com/bluekeyes/go-gitdiff/gitdiff
+    - strings
+    - unicode/utf8
+  language: go

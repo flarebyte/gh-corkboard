@@ -1,0 +1,12 @@
+locator: internal/board/access_policy.go
+meta:
+  function_list:
+    - loadAccess
+    - principalParts
+    - validSlug
+  import_files_list:
+    - fmt
+    - os
+    - regexp
+    - strings
+  language: go

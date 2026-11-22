@@ -1,0 +1,124 @@
+name: Manual release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Verify and build release binaries
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Require the default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      - name: Lint
+        run: go vet ./...
+      - name: Test
+        run: go test ./...
+      - name: Build release artifacts
+        run: |
+          GOBIN="$RUNNER_TEMP" go install github.com/flarebyte/gh-flarebyte/cmd/gh-flarebyte@v0.30.0
+          "$RUNNER_TEMP/gh-flarebyte" build
+      - name: Read the embedded release version
+        id: version
+        shell: bash
+        run: |
+          banner=$(build/gh-corkboard-linux-amd64 --version)
+          version=${banner#gh corkboard }
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Expected a stable x.y.z version in main.project.yaml." >&2
+            exit 1
+          fi
+          printf 'tag=v%s\n' "$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-assets
+          path: build/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Create GitHub release
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: build/
+      - name: Verify checksums
+        working-directory: build
+        run: sha256sum --check --strict checksums.txt
+      - name: Publish verified binaries
+        shell: bash
+        working-directory: build
+        env:
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          RELEASE_COMMIT: ${{ github.sha }}
+          RELEASE_TOKEN: ${{ github.token }}
+        run: |
+          api="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY"
+          headers=(
+            --header "Authorization: Bearer $RELEASE_TOKEN"
+            --header "Accept: application/vnd.github+json"
+            --header "X-GitHub-Api-Version: 2022-11-28"
+          )
+          request() {
+            curl --silent --show-error --fail-with-body "${headers[@]}" "$@"
+          }
+
+          assets=(checksums.txt)
+          while read -r digest asset; do
+            if [[ ! "$digest" =~ ^[a-f0-9]{64}$ || ! "$asset" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+              echo "Invalid release asset entry in checksums.txt." >&2
+              exit 1
+            fi
+            assets+=("$asset")
+          done < checksums.txt
+
+          status=$(curl --silent --show-error "${headers[@]}" --output /dev/null \
+            --write-out '%{http_code}' "$api/git/ref/tags/$RELEASE_TAG")
+          if [[ "$status" != 404 ]]; then
+            echo "Expected an unused tag $RELEASE_TAG (tag lookup returned HTTP $status)." >&2
+            exit 1
+          fi
+
+          draft=$(jq -n --arg tag "$RELEASE_TAG" --arg commit "$RELEASE_COMMIT" \
+            '{tag_name:$tag, target_commitish:$commit, draft:true, generate_release_notes:true}')
+          release=$(request --header 'Content-Type: application/json' \
+            --data "$draft" "$api/releases")
+          release_id=$(jq -er '.id | select(type == "number")' <<< "$release")
+          upload_url="https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$release_id/assets"
+          for asset in "${assets[@]}"; do
+            request --header 'Content-Type: application/octet-stream' \
+              --data-binary "@$asset" "$upload_url?name=$asset" > /dev/null
+          done
+
+          # Atomically claim the tag at the tested commit before publishing the draft.
+          ref=$(jq -n --arg ref "refs/tags/$RELEASE_TAG" --arg commit "$RELEASE_COMMIT" \
+            '{ref:$ref, sha:$commit}')
+          request --header 'Content-Type: application/json' \
+            --data "$ref" "$api/git/refs" > /dev/null
+          request --request PATCH --header 'Content-Type: application/json' \
+            --data '{"draft":false}' "$api/releases/$release_id" | jq -er '.html_url'

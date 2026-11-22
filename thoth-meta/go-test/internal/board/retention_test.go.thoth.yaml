@@ -1,0 +1,21 @@
+locator: internal/board/retention_test.go
+meta:
+  function_list:
+    - TestPruneRechecksBeforeUnlinkAndReconcilesPartialResult
+    - TestPruneReportsUnlinkAndIndexFailures
+    - TestSnapshotOutputFailure
+    - TestSnapshotRejectsUnsafeEntry
+    - TestSnapshotWithDriftAndInvalidIndex
+    - archivedFixture
+    - currentAudit
+  import_files_list:
+    - archive/zip
+    - bytes
+    - errors
+    - io
+    - os
+    - path/filepath
+    - slices
+    - strings
+    - testing
+  language: go

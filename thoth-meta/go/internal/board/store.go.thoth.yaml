@@ -1,0 +1,18 @@
+locator: internal/board/store.go
+meta:
+  function_list:
+    - createFile
+    - isTemporary
+    - openDirectory
+    - openLock
+    - openRegular
+    - readDirectory
+    - replaceFile
+    - stageFile
+  import_files_list:
+    - crypto/rand
+    - fmt
+    - io/fs
+    - os
+    - strings
+  language: go

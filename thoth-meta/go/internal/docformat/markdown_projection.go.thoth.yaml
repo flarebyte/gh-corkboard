@@ -1,0 +1,15 @@
+locator: internal/docformat/markdown_projection.go
+meta:
+  function_list:
+    - appendInline
+    - inlineText
+    - projectMarkdown
+  import_files_list:
+    - github.com/yuin/goldmark
+    - github.com/yuin/goldmark/ast
+    - github.com/yuin/goldmark/text
+    - github.com/yuin/goldmark/util
+    - regexp
+    - strconv
+    - strings
+  language: go

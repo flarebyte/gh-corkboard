@@ -1,0 +1,12 @@
+locator: internal/docformat/patch_test.go
+meta:
+  function_list:
+    - TestJSONMergePatchExamples
+    - TestPatchCSVQuotedPhysicalLines
+    - TestPatchContextAndLineEndings
+    - TestPatchTextRanges
+    - TestRejectInvalidPatchShapes
+  import_files_list:
+    - errors
+    - testing
+  language: go

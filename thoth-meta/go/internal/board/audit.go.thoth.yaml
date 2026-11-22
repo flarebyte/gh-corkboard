@@ -1,0 +1,15 @@
+locator: internal/board/audit.go
+meta:
+  function_list:
+    - comparisonFinding
+    - conflicting
+    - displayIndexPath
+    - planReconcile
+    - sortFindings
+  import_files_list:
+    - cmp
+    - errors
+    - os
+    - slices
+    - strconv
+  language: go
